@@ -1,111 +1,146 @@
 import Head from 'next/head'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 export default function Home() {
   const [loading, setLoading] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  const [activeTab, setActiveTab] = useState(0)
-  const [typedText, setTypedText] = useState('')
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const [scrollY, setScrollY] = useState(0)
+  const [typedText, setTypedText] = useState('')
+  const [counters, setCounters] = useState({ posts: 0, businesses: 0, hours: 0 })
+  const [countersStarted, setCountersStarted] = useState(false)
+  const [activeTab, setActiveTab] = useState(0)
+  const [navScrolled, setNavScrolled] = useState(false)
+  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set())
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animRef = useRef<number>(0)
-
-  const phrases = ['Instagram posts.', 'Facebook updates.', 'TikTok captions.', 'your entire feed.']
+  const heroRef = useRef<HTMLDivElement>(null)
+  const statsRef = useRef<HTMLDivElement>(null)
   const phraseRef = useRef(0)
   const charRef = useRef(0)
   const deletingRef = useRef(false)
+  const animFrameRef = useRef(0)
 
+  const phrases = ['Instagram posts.', 'Facebook updates.', 'TikTok captions.', 'your social media.']
+
+  // Scroll tracking
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40)
-    const handleMouse = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY })
-    window.addEventListener('scroll', handleScroll)
-    window.addEventListener('mousemove', handleMouse)
-    return () => { window.removeEventListener('scroll', handleScroll); window.removeEventListener('mousemove', handleMouse) }
+    const onScroll = () => {
+      setScrollY(window.scrollY)
+      setNavScrolled(window.scrollY > 60)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Mouse tracking
+  useEffect(() => {
+    const onMouse = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY })
+    window.addEventListener('mousemove', onMouse)
+    return () => window.removeEventListener('mousemove', onMouse)
+  }, [])
+
+  // Intersection observer for scroll reveals
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setVisibleSections(prev => new Set([...prev, entry.target.id]))
+          if (entry.target.id === 'stats-section' && !countersStarted) {
+            setCountersStarted(true)
+          }
+        }
+      })
+    }, { threshold: 0.2 })
+    document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [countersStarted])
+
+  // Counter animation
+  useEffect(() => {
+    if (!countersStarted) return
+    const targets = { posts: 12847, businesses: 847, hours: 4230 }
+    const duration = 2000
+    const start = Date.now()
+    const tick = () => {
+      const elapsed = Date.now() - start
+      const progress = Math.min(elapsed / duration, 1)
+      const ease = 1 - Math.pow(1 - progress, 3)
+      setCounters({
+        posts: Math.floor(ease * targets.posts),
+        businesses: Math.floor(ease * targets.businesses),
+        hours: Math.floor(ease * targets.hours),
+      })
+      if (progress < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [countersStarted])
 
   // Typing effect
   useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>
     const type = () => {
       const phrase = phrases[phraseRef.current]
       if (!deletingRef.current) {
         if (charRef.current < phrase.length) {
           setTypedText(phrase.substring(0, charRef.current + 1))
           charRef.current++
-          setTimeout(type, 60)
+          timeout = setTimeout(type, 65)
         } else {
-          setTimeout(() => { deletingRef.current = true; type() }, 2000)
+          timeout = setTimeout(() => { deletingRef.current = true; type() }, 2200)
         }
       } else {
         if (charRef.current > 0) {
           setTypedText(phrase.substring(0, charRef.current - 1))
           charRef.current--
-          setTimeout(type, 30)
+          timeout = setTimeout(type, 28)
         } else {
           deletingRef.current = false
           phraseRef.current = (phraseRef.current + 1) % phrases.length
-          setTimeout(type, 300)
+          timeout = setTimeout(type, 400)
         }
       }
     }
-    const t = setTimeout(type, 500)
-    return () => clearTimeout(t)
+    timeout = setTimeout(type, 600)
+    return () => clearTimeout(timeout)
   }, [])
 
-  // Particle canvas
+  // Canvas particle field
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+    resize()
+    window.addEventListener('resize', resize)
 
-    const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number; color: string }[] = []
-    const colors = ['#7C3AED', '#DB2777', '#F59E0B', '#10B981', '#3B82F6']
-
-    for (let i = 0; i < 80; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        size: Math.random() * 2 + 0.5,
-        opacity: Math.random() * 0.5 + 0.1,
-        color: colors[Math.floor(Math.random() * colors.length)]
-      })
+    const pts: { x: number; y: number; vx: number; vy: number; size: number; hue: number }[] = []
+    for (let i = 0; i < 60; i++) {
+      pts.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3, size: Math.random() * 1.5 + 0.5, hue: Math.random() * 60 + 250 })
     }
 
-    const animate = () => {
+    const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      particles.forEach(p => {
+      pts.forEach(p => {
         p.x += p.vx; p.y += p.vy
         if (p.x < 0 || p.x > canvas.width) p.vx *= -1
         if (p.y < 0 || p.y > canvas.height) p.vy *= -1
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = p.color + Math.floor(p.opacity * 255).toString(16).padStart(2, '0')
+        ctx.fillStyle = `hsla(${p.hue},70%,65%,0.4)`
         ctx.fill()
       })
-      // Draw connections
-      particles.forEach((p, i) => {
-        particles.slice(i + 1).forEach(q => {
-          const d = Math.hypot(p.x - q.x, p.y - q.y)
-          if (d < 120) {
-            ctx.beginPath()
-            ctx.moveTo(p.x, p.y)
-            ctx.lineTo(q.x, q.y)
-            ctx.strokeStyle = `rgba(124,58,237,${0.08 * (1 - d / 120)})`
-            ctx.lineWidth = 0.5
-            ctx.stroke()
-          }
-        })
-      })
-      animRef.current = requestAnimationFrame(animate)
+      pts.forEach((p, i) => pts.slice(i + 1).forEach(q => {
+        const d = Math.hypot(p.x - q.x, p.y - q.y)
+        if (d < 100) {
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y)
+          ctx.strokeStyle = `hsla(270,60%,65%,${0.06 * (1 - d / 100)})`
+          ctx.lineWidth = 0.5; ctx.stroke()
+        }
+      }))
+      animFrameRef.current = requestAnimationFrame(draw)
     }
-    animate()
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
-    window.addEventListener('resize', resize)
-    return () => { cancelAnimationFrame(animRef.current); window.removeEventListener('resize', resize) }
+    draw()
+    return () => { cancelAnimationFrame(animFrameRef.current); window.removeEventListener('resize', resize) }
   }, [])
 
   const handleSubscribe = async () => {
@@ -114,366 +149,422 @@ export default function Home() {
       const res = await fetch('/api/checkout', { method: 'POST' })
       const { url } = await res.json()
       window.location.href = url
-    } catch {
-      alert('Something went wrong.')
-      setLoading(false)
-    }
+    } catch { alert('Something went wrong.'); setLoading(false) }
   }
 
+  const isVisible = (id: string) => visibleSections.has(id)
+
   const tabs = [
-    {
-      label: 'Restaurants', icon: '🍕',
-      post: `Fresh from our kitchen to your table 🍕 Tonight's special: wood-fired margherita with locally-sourced basil. Limited availability — book your table now! ✨ #italianfood #localeats #freshingredients #dinnertonight #foodie #longisland`,
-      platform: 'Instagram', time: '7:00 PM'
-    },
-    {
-      label: 'Barbershops', icon: '✂️',
-      post: `Look sharp, feel sharp. 💈 New week, fresh cuts. Walk-ins welcome or book online. Our crew is ready for you. ✂️ #barbershop #freshcut #mensgrooming #barberlife #lookgood #longislandbarber`,
-      platform: 'Instagram', time: '10:00 AM'
-    },
-    {
-      label: 'Boutiques', icon: '👗',
-      post: `New arrivals just dropped and they're EVERYTHING 🛍️ Spring collection is in — come see what everyone's talking about. Shop in-store or DM us to reserve! 💫 #boutique #newcollection #springfashion #shoplocal #ootd`,
-      platform: 'Instagram', time: '12:00 PM'
-    },
-    {
-      label: 'Gyms', icon: '💪',
-      post: `Your goals don't take days off. Neither do we. 💪 Drop-in classes available this week — no commitment required. Come try us out. 🔥 #gym #fitness #workout #getfit #localfitness #gymmotivation`,
-      platform: 'Instagram', time: '6:00 AM'
-    },
+    { label: '🍕 Restaurant', post: `Fresh from our kitchen to your table tonight 🍕 Our chef just dropped something incredible — come taste why we've been Long Island's favorite for 12 years. Limited tables available! Book now or order online. #longislandeats #italianfood #freshdaily #foodie #localeats` },
+    { label: '✂️ Barbershop', post: `New week. Fresh cut. 💈 Our chairs are open and ready for you. Walk-ins welcome all day — no appointment needed. Come look sharp, feel sharp. ✂️ #barbershop #freshcut #barberlife #mensgrooming #lookgood #brooklyn` },
+    { label: '👗 Boutique', post: `New arrivals just landed and they are EVERYTHING 🛍️ Spring 2026 collection is in — pieces going fast. Come see us in store or DM to reserve your size before it's gone! 💫 #boutique #newcollection #shoplocal #fashion #springvibes` },
+    { label: '💪 Gym', post: `Your best workout is waiting for you 💪 Free drop-in class today at 6PM — no experience needed, just show up ready. 🔥 Tag someone who needs to move their body today. #fitness #gym #workout #getfit #healthylifestyle #motivation` },
   ]
+
+  const parallaxY = (speed: number) => scrollY * speed
 
   return (
     <>
       <Head>
-        <title>PostWiz – AI Social Media Manager for Small Businesses</title>
-        <meta name="description" content="PostWiz writes, schedules, and posts your social media automatically using AI. Set it up once — then forget it." />
+        <title>PostWiz – AI Social Media Manager</title>
+        <meta name="description" content="PostWiz writes and posts your social media automatically. Set it up once, then forget it." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </Head>
 
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        body { background: #02020a; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { background: #06060f; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; cursor: none; }
         .syne { font-family: 'Syne', sans-serif; }
 
-        /* Gradient text */
-        .gt { background: linear-gradient(135deg, #a78bfa 0%, #f472b6 40%, #fbbf24 80%, #34d399 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .gt2 { background: linear-gradient(90deg, #7C3AED, #DB2777); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        /* Custom cursor */
+        #cursor-dot { position: fixed; width: 8px; height: 8px; background: #a78bfa; border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: transform 0.1s; mix-blend-mode: difference; }
+        #cursor-ring { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(167,139,250,0.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); transition: left 0.12s ease, top 0.12s ease, width 0.2s, height 0.2s; }
+        body:has(button:hover) #cursor-ring, body:has(a:hover) #cursor-ring { width: 56px; height: 56px; border-color: rgba(219,39,119,0.6); background: rgba(219,39,119,0.05); }
 
-        /* Animated gradient border */
-        @keyframes borderSpin { to { --angle: 360deg; } }
-        @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
-        .grad-border {
-          background: linear-gradient(#02020a, #02020a) padding-box,
-            conic-gradient(from var(--angle), #7C3AED, #DB2777, #F59E0B, #10B981, #7C3AED) border-box;
-          border: 1px solid transparent;
-          animation: borderSpin 4s linear infinite;
-        }
+        /* Gradient text */
+        .gt { background: linear-gradient(135deg, #a78bfa, #f472b6, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .gt2 { background: linear-gradient(90deg, #7C3AED, #DB2777); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .gt3 { background: linear-gradient(135deg, #06060f, #1a1a3e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
         /* Nav */
-        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; transition: all 0.3s; padding: 20px 48px; display: flex; align-items: center; justify-content: space-between; }
-        .nav.scrolled { background: rgba(2,2,10,0.9); backdrop-filter: blur(20px); padding: 14px 48px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .nav-logo { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
-        .nav-links { display: flex; align-items: center; gap: 36px; }
-        .nav-link { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 24px 60px; display: flex; align-items: center; justify-content: space-between; transition: all 0.4s; }
+        .nav.scrolled { background: rgba(6,6,15,0.85); backdrop-filter: blur(24px); padding: 16px 60px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .nav-logo { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; }
+        .nav-links { display: flex; align-items: center; gap: 40px; }
+        .nav-link { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 14px; font-weight: 500; letter-spacing: 0.3px; transition: color 0.2s; position: relative; }
+        .nav-link::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: linear-gradient(90deg, #7C3AED, #DB2777); transition: width 0.3s; }
         .nav-link:hover { color: #fff; }
+        .nav-link:hover::after { width: 100%; }
 
         /* Buttons */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-primary { background: linear-gradient(135deg, #7C3AED, #DB2777); color: white; padding: 14px 32px; border-radius: 50px; font-size: 15px; box-shadow: 0 0 40px rgba(124,58,237,0.4); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 60px rgba(124,58,237,0.6); }
-        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .btn-lg { padding: 18px 44px; font-size: 17px; }
-        .btn-outline { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); padding: 12px 28px; border-radius: 50px; font-size: 14px; }
-        .btn-outline:hover { border-color: rgba(255,255,255,0.4); color: #fff; background: rgba(255,255,255,0.05); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Inter', sans-serif; font-weight: 600; cursor: none; border: none; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #7C3AED, #DB2777); color: white; padding: 15px 36px; border-radius: 50px; font-size: 16px; position: relative; overflow: hidden; }
+        .btn-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, #9333ea, #ec4899); opacity: 0; transition: opacity 0.3s; }
+        .btn-primary:hover::before { opacity: 1; }
+        .btn-primary span { position: relative; z-index: 1; }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-lg { padding: 20px 52px; font-size: 18px; }
+        .btn-ghost { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.1); padding: 14px 32px; border-radius: 50px; font-size: 15px; backdrop-filter: blur(10px); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: #fff; }
+        .btn-dark { background: #06060f; color: #fff; border: 1.5px solid rgba(255,255,255,0.15); padding: 15px 36px; border-radius: 50px; font-size: 15px; }
+        .btn-dark:hover { border-color: #7C3AED; box-shadow: 0 0 30px rgba(124,58,237,0.2); }
 
-        /* Hero */
-        .hero { position: relative; min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 140px 24px 80px; overflow: hidden; }
-        .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3); color: #c4b5fd; padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 500; margin-bottom: 32px; }
-        .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(52px, 8vw, 96px); font-weight: 800; line-height: 1.0; letter-spacing: -2px; margin-bottom: 24px; }
-        .cursor { display: inline-block; width: 3px; height: 0.85em; background: #DB2777; border-radius: 2px; margin-left: 2px; animation: blink 1s step-end infinite; vertical-align: text-bottom; }
+        /* Scroll reveal */
+        .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1); }
+        .reveal.from-left { transform: translateX(-60px); }
+        .reveal.from-right { transform: translateX(60px); }
+        .reveal.scale-in { transform: scale(0.92); }
+        .reveal.visible { opacity: 1; transform: none; }
+        .reveal.d1 { transition-delay: 0.1s; }
+        .reveal.d2 { transition-delay: 0.2s; }
+        .reveal.d3 { transition-delay: 0.3s; }
+        .reveal.d4 { transition-delay: 0.4s; }
+        .reveal.d5 { transition-delay: 0.5s; }
+
+        /* Animations */
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+        @keyframes floatB { 0%,100%{transform:translateY(-7px)} 50%{transform:translateY(7px)} }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        .hero-sub { font-size: 18px; color: rgba(255,255,255,0.45); max-width: 520px; margin: 0 auto 48px; line-height: 1.8; font-weight: 300; }
-        .hero-ctas { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 64px; flex-wrap: wrap; }
-        .hero-note { font-size: 13px; color: rgba(255,255,255,0.25); }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        @keyframes shimmer { from{background-position:-200% center} to{background-position:200% center} }
+        @keyframes orb1 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(40px,-30px) scale(1.05)} 66%{transform:translate(-20px,20px) scale(0.97)} }
+        @keyframes orb2 { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(-50px,20px) scale(1.03)} 66%{transform:translate(30px,-40px) scale(0.98)} }
+        @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+        @keyframes gradMove { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.9)} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
 
-        /* Floating cards */
-        .float-card { position: absolute; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; backdrop-filter: blur(20px); padding: 16px 20px; }
-        @keyframes floatA { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-16px) rotate(-2deg)} }
-        @keyframes floatB { 0%,100%{transform:translateY(0) rotate(2deg)} 50%{transform:translateY(-12px) rotate(2deg)} }
-        @keyframes floatC { 0%,100%{transform:translateY(-8px) rotate(1deg)} 50%{transform:translateY(8px) rotate(1deg)} }
-        .fa { animation: floatA 5s ease-in-out infinite; }
-        .fb { animation: floatB 6s ease-in-out infinite 1s; }
-        .fc { animation: floatC 4s ease-in-out infinite 0.5s; }
+        .animate-float { animation: float 5s ease-in-out infinite; }
+        .animate-floatB { animation: floatB 4s ease-in-out infinite 1s; }
+        .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+        .shimmer-text { background: linear-gradient(90deg, #a78bfa, #f472b6, #fb923c, #a78bfa); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 3s linear infinite; }
 
-        /* Stats bar */
-        .stats-bar { display: flex; justify-content: center; gap: 64px; padding: 48px 24px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .stat { text-align: center; }
-        .stat-n { font-family: 'Syne', sans-serif; font-size: 40px; font-weight: 800; }
-        .stat-l { font-size: 14px; color: rgba(255,255,255,0.35); margin-top: 4px; }
-
-        /* Section */
-        .section { max-width: 1100px; margin: 0 auto; padding: 100px 24px; }
-        .section-tag { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #a78bfa; margin-bottom: 16px; }
-        .section-title { font-family: 'Syne', sans-serif; font-size: clamp(32px, 5vw, 52px); font-weight: 800; letter-spacing: -1px; margin-bottom: 16px; line-height: 1.1; }
-        .section-sub { font-size: 18px; color: rgba(255,255,255,0.4); font-weight: 300; line-height: 1.7; }
+        /* Sections */
+        .section { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+        .section-label { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #a78bfa; margin-bottom: 16px; }
 
         /* Cards */
-        .glass-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 24px; transition: all 0.3s; }
-        .glass-card:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); transform: translateY(-4px); }
+        .glass { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 24px; backdrop-filter: blur(12px); transition: all 0.4s; }
+        .glass:hover { background: rgba(255,255,255,0.07); border-color: rgba(124,58,237,0.25); transform: translateY(-6px); box-shadow: 0 24px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(124,58,237,0.1); }
 
-        /* Tabs */
-        .tab-btn { padding: 10px 20px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: rgba(255,255,255,0.5); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .tab-btn.active { background: linear-gradient(135deg, #7C3AED, #DB2777); border-color: transparent; color: white; }
+        /* Light section */
+        .light-section { background: #f8f7ff; color: #06060f; }
 
-        /* Post preview */
-        .post-preview { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 24px; position: relative; overflow: hidden; }
-        .post-preview::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(124,58,237,0.05), rgba(219,39,119,0.05)); }
+        /* Cursor typing */
+        .cursor { display: inline-block; width: 3px; height: 0.85em; background: #f472b6; margin-left: 3px; border-radius: 2px; animation: blink 1s step-end infinite; vertical-align: text-bottom; }
 
-        /* Pricing */
-        .price-card { background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(219,39,119,0.08)); border: 1px solid rgba(124,58,237,0.3); border-radius: 28px; padding: 48px; text-align: center; position: relative; overflow: hidden; }
-        .price-card::before { content: ''; position: absolute; top: -60%; left: -30%; width: 200%; height: 200%; background: radial-gradient(ellipse, rgba(124,58,237,0.08) 0%, transparent 60%); pointer-events: none; }
+        /* Feature pill */
+        .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 500; }
 
-        /* Glow orbs */
-        .orb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(80px); }
-        
-        /* Scroll reveal */
-        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s ease; }
-        .reveal.visible { opacity: 1; transform: translateY(0); }
-
-        /* Steps */
-        .step-num { font-family: 'Syne', sans-serif; font-size: 72px; font-weight: 800; opacity: 0.06; position: absolute; top: -10px; right: 20px; line-height: 1; }
+        /* Notification cards */
+        .notif { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px 18px; backdrop-filter: blur(20px); }
 
         /* Marquee */
-        @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-        .marquee-track { display: flex; animation: marquee 20s linear infinite; white-space: nowrap; }
-        .marquee-item { padding: 0 32px; font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.12); text-transform: uppercase; letter-spacing: 2px; }
+        .marquee-wrap { overflow: hidden; }
+        .marquee-track { display: flex; animation: marquee 18s linear infinite; white-space: nowrap; }
+        .marquee-item { padding: 0 28px; font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
 
-        /* Cursor glow follow */
-        .cursor-glow { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%); pointer-events: none; z-index: 0; transform: translate(-50%, -50%); transition: left 0.1s, top 0.1s; }
+        /* Tab */
+        .tab-btn { padding: 10px 22px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: rgba(255,255,255,0.45); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; cursor: none; transition: all 0.25s; }
+        .tab-btn.active { background: linear-gradient(135deg, #7C3AED, #DB2777); border-color: transparent; color: white; box-shadow: 0 0 24px rgba(124,58,237,0.35); }
+        .tab-btn:hover:not(.active) { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); }
 
-        @media (max-width: 768px) {
+        /* Post card */
+        .post-card { background: #fff; border-radius: 20px; padding: 24px; color: #111; transition: all 0.3s; }
+        .post-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+
+        @media (max-width: 900px) {
           .nav { padding: 16px 24px; }
-          .nav-links { display: none; }
-          .hero-title { font-size: 42px; letter-spacing: -1px; }
-          .stats-bar { gap: 32px; flex-wrap: wrap; }
-          .float-card { display: none; }
+          .nav.scrolled { padding: 12px 24px; }
+          .nav-links { gap: 20px; }
+          .section { padding: 0 20px; }
+          body { cursor: auto; }
+          #cursor-dot, #cursor-ring { display: none; }
         }
       `}</style>
 
-      {/* Cursor glow */}
-      <div className="cursor-glow" style={{ left: mousePos.x, top: mousePos.y }} />
+      {/* Custom cursor */}
+      <div id="cursor-dot" style={{ left: mousePos.x, top: mousePos.y }} />
+      <div id="cursor-ring" style={{ left: mousePos.x, top: mousePos.y }} />
 
       {/* Particle canvas */}
-      <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.6 }} />
+      <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.5 }} />
 
       {/* Nav */}
-      <nav className={`nav ${scrolled ? 'scrolled' : ''}`}>
-        <div className="nav-logo">Post<span className="gt2">Wiz</span></div>
+      <nav className={`nav ${navScrolled ? 'scrolled' : ''}`}>
+        <div className="nav-logo syne">Post<span className="gt2">Wiz</span></div>
         <div className="nav-links">
           <a href="#how" className="nav-link">How it works</a>
-          <a href="#features" className="nav-link">Features</a>
+          <a href="#demo" className="nav-link">See it live</a>
           <a href="#pricing" className="nav-link">Pricing</a>
-          <button onClick={handleSubscribe} className="btn btn-primary" style={{ padding: '10px 24px', fontSize: '14px' }}>Start Free →</button>
+          <button onClick={handleSubscribe} className="btn btn-primary" style={{ padding: '11px 28px', fontSize: '14px' }}>
+            <span>Start Free Trial</span>
+          </button>
         </div>
       </nav>
 
       <main style={{ position: 'relative', zIndex: 1 }}>
 
-        {/* Hero */}
-        <section className="hero">
-          {/* Orbs */}
-          <div className="orb" style={{ width: 600, height: 600, background: 'rgba(124,58,237,0.12)', top: '-20%', left: '-15%' }} />
-          <div className="orb" style={{ width: 400, height: 400, background: 'rgba(219,39,119,0.1)', top: '20%', right: '-10%' }} />
-          <div className="orb" style={{ width: 300, height: 300, background: 'rgba(245,158,11,0.08)', bottom: '-10%', left: '40%' }} />
+        {/* ═══ HERO ═══ */}
+        <section ref={heroRef} style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '120px 24px 60px', position: 'relative', overflow: 'hidden' }}>
+          {/* Animated orbs */}
+          <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)', top: '-20%', left: '-20%', animation: 'orb1 15s ease-in-out infinite', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(219,39,119,0.14) 0%, transparent 70%)', top: '10%', right: '-15%', animation: 'orb2 18s ease-in-out infinite', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(251,146,60,0.1) 0%, transparent 70%)', bottom: '-10%', left: '35%', animation: 'orb1 12s ease-in-out infinite 3s', pointerEvents: 'none' }} />
 
-          {/* Floating cards */}
-          <div className="float-card fa" style={{ left: '4%', top: '30%', width: 200 }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>📸 Posted to Instagram</div>
-            <div style={{ fontSize: '13px', lineHeight: 1.5 }}>Your daily special is live ✨</div>
-            <div style={{ fontSize: '11px', color: '#34d399', marginTop: '8px' }}>↑ 247 likes in 1 hour</div>
-          </div>
-          <div className="float-card fb" style={{ right: '4%', top: '35%', width: 190 }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>⚡ Auto-scheduled</div>
-            <div style={{ fontSize: '13px', lineHeight: 1.5 }}>Next 7 days planned</div>
-            <div style={{ fontSize: '11px', color: '#a78bfa', marginTop: '8px' }}>→ 21 posts ready</div>
-          </div>
-          <div className="float-card fc" style={{ left: '6%', bottom: '22%', width: 180 }}>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>💰 New customer</div>
-            <div style={{ fontSize: '13px' }}>Found you via Instagram</div>
+          {/* Floating notification cards */}
+          <div className="notif animate-float" style={{ position: 'absolute', left: '5%', top: '32%', width: 210, textAlign: 'left' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>📸 Posted to Instagram</div>
+            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>Your daily special is live! ✨</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ height: 4, flex: 1, borderRadius: 2, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}><div style={{ height: '100%', width: '73%', background: 'linear-gradient(90deg, #7C3AED, #DB2777)', borderRadius: 2 }} /></div>
+              <span style={{ fontSize: 11, color: '#a78bfa' }}>↑ 247 likes</span>
+            </div>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            <div className="hero-badge">
-              <span style={{ width: 8, height: 8, background: '#34d399', borderRadius: '50%', display: 'inline-block', animation: 'blink 2s ease-in-out infinite' }} />
-              Trusted by 847+ small businesses
+          <div className="notif animate-floatB" style={{ position: 'absolute', right: '5%', top: '28%', width: 200, textAlign: 'left' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>⚡ AI Generated</div>
+            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>7 posts scheduled</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Next: Tomorrow 9:00 AM</div>
+          </div>
+
+          <div className="notif animate-float" style={{ position: 'absolute', left: '7%', bottom: '25%', width: 185, textAlign: 'left', animationDelay: '2s' }}>
+            <div style={{ fontSize: 11, color: '#34d399', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block' }} />New customer</div>
+            <div style={{ fontSize: 13 }}>Found you via Instagram</div>
+          </div>
+
+          <div className="notif animate-floatB" style={{ position: 'absolute', right: '6%', bottom: '28%', width: 195, textAlign: 'left', animationDelay: '1s' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>📊 This week</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 18, fontWeight: 700, color: '#f472b6' }}>14</div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>posts</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 18, fontWeight: 700, color: '#a78bfa' }}>3.2k</div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>reach</div></div>
+              <div style={{ textAlign: 'center' }}><div style={{ fontSize: 18, fontWeight: 700, color: '#34d399' }}>+8</div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>customers</div></div>
+            </div>
+          </div>
+
+          {/* Hero content */}
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: 820 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)', borderRadius: 50, padding: '9px 20px', marginBottom: 36 }}>
+              <span className="animate-pulse" style={{ width: 7, height: 7, borderRadius: '50%', background: '#a78bfa', display: 'inline-block' }} />
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#c4b5fd' }}>Trusted by 847+ small businesses</span>
             </div>
 
-            <h1 className="hero-title">
+            <h1 className="syne" style={{ fontSize: 'clamp(50px, 7.5vw, 96px)', fontWeight: 800, lineHeight: 1.0, letterSpacing: '-3px', marginBottom: 28 }}>
               AI writes your<br />
               <span className="gt">{typedText}<span className="cursor" /></span>
             </h1>
 
-            <p className="hero-sub">
-              PostWiz generates and posts to Instagram, Facebook, and TikTok automatically. Tell us about your business once — AI handles everything else, forever.
+            <p style={{ fontSize: 19, color: 'rgba(255,255,255,0.45)', maxWidth: 560, margin: '0 auto 48px', lineHeight: 1.85, fontWeight: 300 }}>
+              PostWiz generates and posts to Instagram, Facebook, and TikTok automatically. Tell us about your business once — we handle everything else, every day.
             </p>
 
-            <div className="hero-ctas">
-              <button onClick={handleSubscribe} disabled={loading} className="btn btn-primary btn-lg">
-                {loading ? 'Loading...' : 'Start 7-Day Free Trial →'}
-              </button>
-              <button className="btn btn-outline" onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}>
-                See how it works
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button onClick={handleSubscribe} disabled={loading} className="btn btn-primary btn-lg">
+                  <span>{loading ? 'Loading...' : 'Start 7-Day Free Trial →'}</span>
+                </button>
+                <button className="btn btn-ghost" onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}>
+                  Watch it work
+                </button>
+              </div>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.22)' }}>No credit card · 2 minute setup · Cancel anytime</p>
             </div>
-            <p className="hero-note">No credit card required · 2 minute setup · Cancel anytime</p>
+
+            {/* Scroll indicator */}
+            <div style={{ marginTop: 72, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, opacity: 0.35 }}>
+              <span style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' }}>Scroll</span>
+              <div style={{ width: 1, height: 48, background: 'linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)' }} />
+            </div>
           </div>
         </section>
 
-        {/* Stats */}
-        <div className="stats-bar" style={{ position: 'relative', zIndex: 1 }}>
-          {[
-            { n: '2,847+', l: 'Posts Generated Today' },
-            { n: '847+', l: 'Active Businesses' },
-            { n: '$0', l: 'Dev Cost to Start' },
-            { n: '4.9★', l: 'Average Rating' },
-          ].map(s => (
-            <div className="stat" key={s.l}>
-              <div className="stat-n gt">{s.n}</div>
-              <div className="stat-l">{s.l}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Marquee */}
-        <div style={{ overflow: 'hidden', padding: '32px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', position: 'relative', zIndex: 1 }}>
+        {/* ═══ MARQUEE ═══ */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '18px 0', overflow: 'hidden' }}>
           <div className="marquee-track">
-            {['Instagram', 'Facebook', 'TikTok', 'Auto-Schedule', 'AI Writing', 'Smart Hashtags', 'Analytics', 'One-Click Edit', 'Instagram', 'Facebook', 'TikTok', 'Auto-Schedule', 'AI Writing', 'Smart Hashtags', 'Analytics', 'One-Click Edit'].map((t, i) => (
-              <span key={i} className="marquee-item">✦ {t}</span>
+            {['Instagram Automation', 'AI Post Writing', 'Facebook Scheduling', 'TikTok Captions', 'Smart Hashtags', 'Auto-Posting', 'Brand Voice AI', 'Analytics Dashboard', 'Instagram Automation', 'AI Post Writing', 'Facebook Scheduling', 'TikTok Captions', 'Smart Hashtags', 'Auto-Posting', 'Brand Voice AI', 'Analytics Dashboard'].map((t, i) => (
+              <span key={i} className="marquee-item" style={{ color: i % 4 === 0 ? '#a78bfa' : i % 4 === 1 ? '#f472b6' : i % 4 === 2 ? 'rgba(255,255,255,0.25)' : '#fb923c' }}>✦ {t}</span>
             ))}
           </div>
         </div>
 
-        {/* How it works */}
-        <section id="how" style={{ position: 'relative', zIndex: 1 }}>
-          <div className="section">
-            <div style={{ textAlign: 'center', marginBottom: '72px' }}>
-              <div className="section-tag">How it works</div>
-              <h2 className="section-title">Three steps. <span className="gt">Then autopilot.</span></h2>
-              <p className="section-sub" style={{ maxWidth: 480, margin: '0 auto' }}>Set up once in 2 minutes. PostWiz handles your social media every single day after that.</p>
+        {/* ═══ STATS — light section ═══ */}
+        <section id="stats-section" data-reveal className="light-section" style={{ padding: '100px 40px' }}>
+          <div ref={statsRef} style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 64 }}>
+              <div className="section-label" style={{ color: '#7C3AED' }}>By the numbers</div>
+              <h2 className="syne" style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, color: '#06060f', letterSpacing: '-1.5px' }}>
+                PostWiz works while<br /><span style={{ background: 'linear-gradient(135deg, #7C3AED, #DB2777)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>you run your business.</span>
+              </h2>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
               {[
-                { n: '01', icon: '✏️', title: 'Tell us about your business', desc: 'Name, industry, tone, what you sell. Takes less than 2 minutes. That\'s it.', color: '#7C3AED' },
-                { n: '02', icon: '🤖', title: 'AI generates your content', desc: 'We create a full week of platform-perfect posts tailored to your brand voice.', color: '#DB2777' },
-                { n: '03', icon: '🚀', title: 'Posts go live automatically', desc: 'One-click approval or fully automatic. Your social media runs itself.', color: '#F59E0B' },
+                { num: counters.posts.toLocaleString(), label: 'Posts Generated', sub: 'And counting', color: '#7C3AED', icon: '✍️' },
+                { num: counters.businesses.toLocaleString(), label: 'Active Businesses', sub: 'Across every industry', color: '#DB2777', icon: '🏢' },
+                { num: counters.hours.toLocaleString() + 'h', label: 'Hours Saved', sub: 'Time back to owners', color: '#F59E0B', icon: '⚡' },
               ].map(s => (
-                <div key={s.n} className="glass-card" style={{ padding: '36px', position: 'relative', overflow: 'hidden' }}>
-                  <div className="step-num">{s.n}</div>
-                  <div style={{ fontSize: '36px', marginBottom: '20px' }}>{s.icon}</div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: s.color, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '10px' }}>Step {s.n}</div>
-                  <h3 className="syne" style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', letterSpacing: '-0.3px' }}>{s.title}</h3>
-                  <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.45)', lineHeight: 1.8 }}>{s.desc}</p>
+                <div key={s.label} style={{ background: '#fff', border: `1px solid rgba(0,0,0,0.06)`, borderRadius: 24, padding: '40px 36px', textAlign: 'center', boxShadow: '0 4px 30px rgba(0,0,0,0.05)', transition: 'transform 0.3s, box-shadow 0.3s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 60px rgba(0,0,0,0.12)` }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 30px rgba(0,0,0,0.05)' }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>{s.icon}</div>
+                  <div className="syne" style={{ fontSize: 52, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>{s.num}</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: '#06060f', marginBottom: 4 }}>{s.label}</div>
+                  <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.4)' }}>{s.sub}</div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Live post demo */}
-        <section style={{ position: 'relative', zIndex: 1, padding: '0 24px 100px' }}>
+        {/* ═══ HOW IT WORKS ═══ */}
+        <section id="how" style={{ padding: '120px 40px', position: 'relative' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <div className="section-tag">See it in action</div>
-              <h2 className="section-title">PostWiz writes for <span className="gt">every business.</span></h2>
+            <div style={{ textAlign: 'center', marginBottom: 80 }}>
+              <div className="section-label">How it works</div>
+              <h2 className="syne" style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 800, letterSpacing: '-2px', lineHeight: 1.05 }}>
+                Three steps.<br /><span className="gt">Then autopilot forever.</span>
+              </h2>
             </div>
+
+            {/* Steps with connecting line */}
+            <div style={{ position: 'relative' }}>
+              <div style={{ position: 'absolute', left: '50%', top: 60, bottom: 60, width: 1, background: 'linear-gradient(to bottom, rgba(124,58,237,0.3), rgba(219,39,119,0.3), rgba(251,146,60,0.3))', transform: 'translateX(-50%)', display: 'block' }} />
+
+              {[
+                { n: '01', icon: '✏️', title: 'Tell us about your business', desc: 'Business name, industry, brand tone, what makes you special. 2 minutes max. This is the only time you touch it.', color: '#7C3AED', side: 'left' },
+                { n: '02', icon: '🤖', title: 'AI generates your content', desc: 'Our AI writes a full week of platform-perfect posts calibrated to your exact brand voice. Instagram, Facebook, TikTok — all handled.', color: '#DB2777', side: 'right' },
+                { n: '03', icon: '🚀', title: 'Posts go live automatically', desc: 'One-click approval or fully automatic posting. Your social media is covered every single day without you lifting a finger.', color: '#F59E0B', side: 'left' },
+              ].map((s, i) => (
+                <div key={s.n} id={`step-${i}`} data-reveal style={{ display: 'grid', gridTemplateColumns: '1fr 80px 1fr', gap: 0, marginBottom: 48, alignItems: 'center' }}>
+                  {s.side === 'left' ? (
+                    <>
+                      <div className={`glass reveal ${isVisible(`step-${i}`) ? 'visible' : ''} from-left d${i + 1}`} style={{ padding: '40px 44px', gridColumn: 1 }}>
+                        <div style={{ fontSize: 40, marginBottom: 16 }}>{s.icon}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: s.color, marginBottom: 10 }}>Step {s.n}</div>
+                        <h3 className="syne" style={{ fontSize: 22, fontWeight: 700, marginBottom: 12, letterSpacing: '-0.3px' }}>{s.title}</h3>
+                        <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', lineHeight: 1.8 }}>{s.desc}</p>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: `linear-gradient(135deg, ${s.color}30, ${s.color}10)`, border: `2px solid ${s.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: s.color, fontFamily: 'Syne, sans-serif' }}>{s.n}</div>
+                      </div>
+                      <div style={{ gridColumn: 3 }} />
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ gridColumn: 1 }} />
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: `linear-gradient(135deg, ${s.color}30, ${s.color}10)`, border: `2px solid ${s.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: s.color, fontFamily: 'Syne, sans-serif' }}>{s.n}</div>
+                      </div>
+                      <div className={`glass reveal ${isVisible(`step-${i}`) ? 'visible' : ''} from-right d${i + 1}`} style={{ padding: '40px 44px', gridColumn: 3 }}>
+                        <div style={{ fontSize: 40, marginBottom: 16 }}>{s.icon}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: s.color, marginBottom: 10 }}>Step {s.n}</div>
+                        <h3 className="syne" style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>{s.title}</h3>
+                        <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', lineHeight: 1.8 }}>{s.desc}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ LIVE DEMO ═══ */}
+        <section id="demo" className="light-section" style={{ padding: '120px 40px' }}>
+          <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 52 }}>
+              <div className="section-label" style={{ color: '#7C3AED' }}>Live demo</div>
+              <h2 className="syne" style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, color: '#06060f', letterSpacing: '-1.5px', marginBottom: 16 }}>
+                PostWiz writes for <span style={{ background: 'linear-gradient(135deg, #7C3AED, #DB2777)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>every business.</span>
+              </h2>
+              <p style={{ fontSize: 17, color: 'rgba(0,0,0,0.45)', maxWidth: 480, margin: '0 auto' }}>Click your industry and see exactly what AI writes for you.</p>
+            </div>
+
             {/* Tabs */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 36, flexWrap: 'wrap' }}>
               {tabs.map((t, i) => (
-                <button key={i} className={`tab-btn ${activeTab === i ? 'active' : ''}`} onClick={() => setActiveTab(i)}>
-                  {t.icon} {t.label}
-                </button>
+                <button key={i} onClick={() => setActiveTab(i)} style={{ padding: '10px 22px', borderRadius: 50, border: `1px solid ${activeTab === i ? '#7C3AED' : 'rgba(0,0,0,0.12)'}`, background: activeTab === i ? 'linear-gradient(135deg, #7C3AED, #DB2777)' : '#fff', color: activeTab === i ? '#fff' : 'rgba(0,0,0,0.55)', fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.25s', boxShadow: activeTab === i ? '0 6px 24px rgba(124,58,237,0.3)' : 'none' }}>{t.label}</button>
               ))}
             </div>
-            <div className="post-preview" style={{ maxWidth: 680, margin: '0 auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
-                <span style={{ marginLeft: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.2)', fontFamily: 'monospace' }}>postwiz.co/dashboard</span>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(124,58,237,0.2)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#E1306C', background: 'rgba(225,48,108,0.15)', padding: '4px 12px', borderRadius: '50px' }}>📸 {tabs[activeTab].platform}</span>
-                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>🕐 {tabs[activeTab].time}</span>
+
+            {/* Post preview - white card */}
+            <div style={{ background: '#fff', borderRadius: 24, padding: 32, boxShadow: '0 8px 60px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.06)', maxWidth: 680, margin: '0 auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #7C3AED, #DB2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🤖</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#06060f' }}>PostWiz AI</div>
+                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.4)' }}>Generated just now</div>
                 </div>
-                <p style={{ fontSize: '15px', lineHeight: 1.7, color: 'rgba(255,255,255,0.8)', minHeight: '80px', transition: 'all 0.3s' }}>{tabs[activeTab].post}</p>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                  <button className="btn" style={{ background: 'linear-gradient(135deg, #7C3AED, #DB2777)', color: 'white', padding: '8px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600 }}>✓ Approve & Post</button>
-                  <button className="btn btn-outline" style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '8px' }}>✏️ Edit</button>
-                </div>
+                <div style={{ marginLeft: 'auto', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', color: '#7C3AED', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 50 }}>📸 Instagram</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '16px', padding: '4px 0' }}>
-                <span style={{ width: 8, height: 8, background: '#34d399', borderRadius: '50%', display: 'inline-block', animation: 'blink 2s ease-in-out infinite' }} />
-                <span style={{ fontSize: '13px', color: '#34d399' }}>AI is preparing next week&apos;s posts automatically...</span>
+              <p style={{ fontSize: 16, lineHeight: 1.8, color: '#333', marginBottom: 20 }}>{tabs[activeTab].post}</p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button style={{ background: 'linear-gradient(135deg, #7C3AED, #DB2777)', border: 'none', color: '#fff', padding: '10px 22px', borderRadius: 10, fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>✓ Approve & Schedule</button>
+                <button style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.1)', color: 'rgba(0,0,0,0.55)', padding: '10px 18px', borderRadius: 10, fontFamily: 'Inter, sans-serif', fontSize: 14, cursor: 'pointer' }}>✏️ Edit</button>
+                <button style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.1)', color: 'rgba(0,0,0,0.55)', padding: '10px 18px', borderRadius: 10, fontFamily: 'Inter, sans-serif', fontSize: 14, cursor: 'pointer' }}>↻ Regenerate</button>
+              </div>
+            </div>
+
+            <p style={{ textAlign: 'center', marginTop: 24, fontSize: 14, color: 'rgba(0,0,0,0.35)' }}>This is a real example of what PostWiz writes for you, every single day.</p>
+          </div>
+        </section>
+
+        {/* ═══ FEATURES ═══ */}
+        <section style={{ padding: '120px 40px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center', marginBottom: 80 }}>
+              <div>
+                <div className="section-label">Features</div>
+                <h2 className="syne" style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, letterSpacing: '-1.5px', lineHeight: 1.1, marginBottom: 20 }}>
+                  Everything included.<br /><span className="gt">Zero extra fees.</span>
+                </h2>
+                <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.4)', lineHeight: 1.8 }}>One subscription covers everything you need to run a full social media presence — from writing to posting to analytics.</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                {[
+                  { icon: '🤖', label: 'AI Writing' },
+                  { icon: '📅', label: 'Auto-Schedule' },
+                  { icon: '📱', label: 'Multi-Platform' },
+                  { icon: '#️⃣', label: 'Smart Hashtags' },
+                  { icon: '📊', label: 'Analytics' },
+                  { icon: '✏️', label: 'Quick Editing' },
+                ].map(f => (
+                  <div key={f.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '20px', display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.25s', cursor: 'default' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.1)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(124,58,237,0.3)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)' }}>
+                    <span style={{ fontSize: 22 }}>{f.icon}</span>
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>{f.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features */}
-        <section id="features" style={{ position: 'relative', zIndex: 1, padding: '0 24px 100px' }}>
+        {/* ═══ TESTIMONIALS — light section ═══ */}
+        <section className="light-section" style={{ padding: '120px 40px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '72px' }}>
-              <div className="section-tag">Features</div>
-              <h2 className="section-title">Everything you need. <span className="gt">Nothing you don&apos;t.</span></h2>
+            <div style={{ textAlign: 'center', marginBottom: 64 }}>
+              <div className="section-label" style={{ color: '#7C3AED' }}>Testimonials</div>
+              <h2 className="syne" style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, color: '#06060f', letterSpacing: '-1.5px' }}>
+                Real businesses.<br /><span style={{ background: 'linear-gradient(135deg, #7C3AED, #DB2777)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Real results.</span>
+              </h2>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
               {[
-                { icon: '🤖', title: 'AI Post Writing', desc: 'Claude AI writes engaging posts perfectly calibrated to your brand voice, industry, and audience.', color: '#7C3AED' },
-                { icon: '📅', title: 'Smart Auto-Scheduling', desc: 'Posts automatically at peak times for your specific audience. No manual scheduling ever.', color: '#DB2777' },
-                { icon: '📱', title: 'Multi-Platform', desc: 'Instagram, Facebook, and TikTok all managed from one clean dashboard.', color: '#059669' },
-                { icon: '#️⃣', title: 'AI Hashtag Engine', desc: 'Generates the best hashtags for your post automatically to maximize reach and discovery.', color: '#D97706' },
-                { icon: '📊', title: 'Performance Analytics', desc: 'Clear data on what posts are working. Understand your audience without being a data scientist.', color: '#0891B2' },
-                { icon: '✏️', title: 'One-Click Editing', desc: 'Full control. Review any post before it goes live and edit it in seconds.', color: '#7C3AED' },
-              ].map(f => (
-                <div key={f.title} className="glass-card" style={{ padding: '28px' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = f.color + '40'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'}>
-                  <div style={{ fontSize: '28px', marginBottom: '14px' }}>{f.icon}</div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '10px' }}>{f.title}</h3>
-                  <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', lineHeight: 1.8 }}>{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section style={{ position: 'relative', zIndex: 1, padding: '0 24px 100px' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-              <div className="section-tag">Testimonials</div>
-              <h2 className="section-title">Real businesses. <span className="gt">Real results.</span></h2>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-              {[
-                { n: 'Maria G.', b: 'Pizzeria Owner, Long Island', q: 'I was barely posting once a week. PostWiz posts every single day now and I get 3x more customers finding me on Instagram. It literally pays for itself.', c: '#E1306C' },
-                { n: 'Jason T.', b: 'Barbershop Owner, Queens', q: 'I told it my shop name and what I do. Now it just... posts for me. Got 4 new clients last week from TikTok alone. Wish I found this sooner.', c: '#7C3AED' },
-                { n: 'Sandra K.', b: 'Boutique Owner, Brooklyn', q: 'Best $29 I spend every month. Used to waste hours thinking of what to post. Now I spend literally zero minutes on social media. Just check the results.', c: '#F59E0B' },
+                { n: 'Maria G.', b: 'Pizzeria · Long Island', q: 'I was posting once a week at best. PostWiz posts every day and I literally get 3x more customers finding me. It pays for itself in one new customer.', stars: 5, color: '#E1306C' },
+                { n: 'Jason T.', b: 'Barbershop · Queens', q: 'I told it my shop name and what I do. Now it just posts for me. Got 4 new clients last week from TikTok alone. Best thing I\'ve ever used.', stars: 5, color: '#7C3AED' },
+                { n: 'Sandra K.', b: 'Boutique · Brooklyn', q: 'Zero minutes spent on social media. PostWiz handles everything. My engagement is up 200% and I haven\'t posted manually in 3 months.', stars: 5, color: '#F59E0B' },
               ].map(t => (
-                <div key={t.n} className="glass-card" style={{ padding: '32px' }}>
-                  <div style={{ fontSize: '18px', letterSpacing: '2px', color: t.c, marginBottom: '20px' }}>★★★★★</div>
-                  <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.9, marginBottom: '24px', fontStyle: 'italic' }}>&ldquo;{t.q}&rdquo;</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg, ${t.c}40, ${t.c}20)`, border: `1px solid ${t.c}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: 700, color: t.c }}>{t.n[0]}</div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '14px' }}>{t.n}</div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>{t.b}</div>
-                    </div>
+                <div key={t.n} style={{ background: '#fff', borderRadius: 24, padding: '32px', boxShadow: '0 4px 30px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.05)', transition: 'all 0.3s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 60px rgba(0,0,0,0.1)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 30px rgba(0,0,0,0.06)' }}>
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>{Array(t.stars).fill(0).map((_, i) => <span key={i} style={{ color: t.color, fontSize: 16 }}>★</span>)}</div>
+                  <p style={{ fontSize: 15, color: 'rgba(0,0,0,0.65)', lineHeight: 1.9, marginBottom: 24, fontStyle: 'italic' }}>&ldquo;{t.q}&rdquo;</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 42, height: 42, borderRadius: '50%', background: `linear-gradient(135deg, ${t.color}20, ${t.color}10)`, border: `1.5px solid ${t.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: t.color, fontFamily: 'Syne, sans-serif' }}>{t.n[0]}</div>
+                    <div><div style={{ fontSize: 14, fontWeight: 600, color: '#06060f' }}>{t.n}</div><div style={{ fontSize: 12, color: 'rgba(0,0,0,0.4)', marginTop: 1 }}>{t.b}</div></div>
                   </div>
                 </div>
               ))}
@@ -481,59 +572,67 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Pricing */}
-        <section id="pricing" style={{ position: 'relative', zIndex: 1, padding: '0 24px 100px' }}>
-          <div style={{ maxWidth: 500, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-              <div className="section-tag">Pricing</div>
-              <h2 className="section-title">Simple, <span className="gt">honest</span> pricing.</h2>
-              <p className="section-sub">Less than one coffee a day. Less than one hour of a social media manager&apos;s time.</p>
+        {/* ═══ PRICING ═══ */}
+        <section id="pricing" style={{ padding: '120px 40px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }} />
+          <div style={{ maxWidth: 520, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+            <div style={{ textAlign: 'center', marginBottom: 52 }}>
+              <div className="section-label">Pricing</div>
+              <h2 className="syne" style={{ fontSize: 'clamp(32px, 4vw, 52px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 12 }}>
+                One price. <span className="gt">Everything included.</span>
+              </h2>
+              <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.4)' }}>Less than one hour of a social media manager&apos;s time.</p>
             </div>
-            <div className="price-card">
-              <div style={{ display: 'inline-block', background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.4)', color: '#c4b5fd', padding: '6px 18px', borderRadius: '50px', fontSize: '12px', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '28px' }}>All Inclusive</div>
-              <div className="syne" style={{ fontSize: '80px', fontWeight: 800, lineHeight: 1 }}>
-                <span className="gt">$29</span>
+
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 28, padding: '48px 44px', backdropFilter: 'blur(20px)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: 28, padding: 1, background: 'linear-gradient(135deg, rgba(124,58,237,0.4), rgba(219,39,119,0.4), rgba(251,146,60,0.2))', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', pointerEvents: 'none' }} />
+
+              <div style={{ textAlign: 'center', marginBottom: 36 }}>
+                <div style={{ display: 'inline-block', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)', color: '#c4b5fd', padding: '6px 18px', borderRadius: 50, fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 24 }}>All Inclusive</div>
+                <div className="syne" style={{ fontSize: 88, fontWeight: 800, lineHeight: 1 }}>
+                  <span className="gt">$29</span>
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.3)', marginTop: 8, fontSize: 15 }}>per month, billed monthly</div>
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.35)', marginBottom: '36px', marginTop: '8px', fontSize: '15px' }}>per month · billed monthly</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '36px', textAlign: 'left' }}>
-                {['Unlimited AI-written posts', 'Auto-scheduling & publishing', 'Instagram, Facebook & TikTok', 'AI hashtag generation', 'Post performance analytics', 'One-click editing', 'Priority support', 'Cancel anytime'].map(item => (
-                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '15px' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ color: '#34d399', fontSize: '11px', fontWeight: 700 }}>✓</span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 36 }}>
+                {['Unlimited AI-written posts', 'Auto-scheduling & publishing', 'Instagram, Facebook & TikTok', 'AI hashtag generation', 'Post performance analytics', 'One-click editing & approval', 'Cancel anytime, no contracts'].map(item => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 15 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ color: '#34d399', fontSize: 12, fontWeight: 700 }}>✓</span>
                     </div>
                     <span style={{ color: 'rgba(255,255,255,0.75)' }}>{item}</span>
                   </div>
                 ))}
               </div>
-              <button onClick={handleSubscribe} disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '18px', fontSize: '16px', borderRadius: '14px' }}>
-                {loading ? 'Loading...' : 'Start 7-Day Free Trial →'}
+
+              <button onClick={handleSubscribe} disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '19px', fontSize: '17px', borderRadius: 16 }}>
+                <span>{loading ? 'Loading...' : 'Start 7-Day Free Trial →'}</span>
               </button>
-              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px', marginTop: '14px' }}>7 days free · then $29/month · no contracts</p>
+              <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12, marginTop: 14 }}>7 days free · then $29/month · cancel anytime</p>
             </div>
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section style={{ position: 'relative', zIndex: 1, padding: '80px 24px 140px', textAlign: 'center' }}>
-          <div className="orb" style={{ width: 500, height: 500, background: 'rgba(124,58,237,0.1)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <h2 className="syne" style={{ fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 800, letterSpacing: '-2px', marginBottom: '20px', lineHeight: 1.05 }}>
-              Ready to put social media<br /><span className="gt">on autopilot?</span>
+        {/* ═══ FINAL CTA ═══ */}
+        <section className="light-section" style={{ padding: '120px 40px', textAlign: 'center' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <h2 className="syne" style={{ fontSize: 'clamp(40px, 6vw, 80px)', fontWeight: 800, color: '#06060f', letterSpacing: '-3px', lineHeight: 1.0, marginBottom: 20 }}>
+              Ready to put social<br />media on <span style={{ background: 'linear-gradient(135deg, #7C3AED, #DB2777)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>autopilot?</span>
             </h2>
-            <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.4)', marginBottom: '48px', fontWeight: 300 }}>Join hundreds of small businesses saving hours every single week.</p>
-            <button onClick={handleSubscribe} disabled={loading} className="btn btn-primary btn-lg">
-              {loading ? 'Loading...' : 'Get Started Free — No Card Needed'}
+            <p style={{ fontSize: 18, color: 'rgba(0,0,0,0.4)', marginBottom: 48, fontWeight: 300 }}>Join hundreds of small businesses saving hours every week.</p>
+            <button onClick={handleSubscribe} disabled={loading} className="btn btn-primary btn-lg" style={{ fontSize: '18px', padding: '20px 56px' }}>
+              <span>{loading ? 'Loading...' : 'Get Started Free — No Card Needed'}</span>
             </button>
           </div>
         </section>
 
         {/* Footer */}
-        <footer style={{ position: 'relative', zIndex: 1, borderTop: '1px solid rgba(255,255,255,0.05)', padding: '32px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div className="syne" style={{ fontSize: '20px', fontWeight: 800 }}>Post<span className="gt2">Wiz</span></div>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '13px' }}>© 2026 PostWiz. All rights reserved.</p>
-          <div style={{ display: 'flex', gap: '24px' }}>
-            <a href="/privacy" style={{ color: 'rgba(255,255,255,0.25)', textDecoration: 'none', fontSize: '13px' }}>Privacy</a>
-            <a href="/terms" style={{ color: 'rgba(255,255,255,0.25)', textDecoration: 'none', fontSize: '13px' }}>Terms</a>
+        <footer style={{ background: '#06060f', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '32px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div className="syne" style={{ fontSize: 20, fontWeight: 800 }}>Post<span className="gt2">Wiz</span></div>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>© 2026 PostWiz. All rights reserved.</p>
+          <div style={{ display: 'flex', gap: 24 }}>
+            {['Privacy', 'Terms'].map(l => <a key={l} href={`/${l.toLowerCase()}`} style={{ color: 'rgba(255,255,255,0.25)', textDecoration: 'none', fontSize: 13 }}>{l}</a>)}
           </div>
         </footer>
       </main>
