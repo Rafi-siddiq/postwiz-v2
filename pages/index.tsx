@@ -444,9 +444,6 @@ export default function Home() {
               const op = i === 0 ? s1 : i === 1 ? s2 : s3
               const ein = i === 0 ? s1 : i === 1 ? s2 : s3
               const enterAmt = Math.min(1, ein * 2.5)
-              const exitAmt = i === 0 ? s1out : i === 1 ? s2out : 0
-
-              // These are defined inline to avoid TS errors
               const s1out2 = clamp((scroll - (B + wh * .7)) / (wh * .4))
               const s2out2 = clamp((scroll - (B + wh * 1.7)) / (wh * .4))
               const exitVal = i === 0 ? s1out2 : i === 1 ? s2out2 : 0
