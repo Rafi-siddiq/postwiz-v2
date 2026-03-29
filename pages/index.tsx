@@ -158,17 +158,14 @@ export default function Home() {
     { icon:'✏️', num:'01', color:'#8b5cf6',
       title:'Tell us about\nyour business',
       desc:'Name, industry, brand voice, which platforms. Takes 2 minutes. Done once, remembered forever.',
-      bullets:['Business name, industry & location','Your brand tone — fun, bold, professional','Which of the 8 platforms to manage','Works for any local business or industry'],
     },
     { icon:'🤖', num:'02', color:'#ec4899',
       title:'AI writes all\nyour content',
       desc:'A full week of posts for every platform, captions for your photos, and professional replies to every review — all in your exact brand voice.',
-      bullets:['7 days of posts generated every week automatically','Platform-specific captions — not copy-pasted across all','Review responses drafted and sent in under 30 seconds','Approve everything, edit anything, or let it fully auto-post'],
     },
     { icon:'🚀', num:'03', color:'#10b981',
       title:'Everything goes live\nautomatically',
       desc:'Posts publish at peak engagement times. Reviews get replies within seconds. Your entire online presence runs on autopilot, every single day.',
-      bullets:['AI picks peak posting times for your audience','Reviews replied to in under 30 seconds — automatically','New content generated fresh every single week','Zero daily effort required from you — ever again'],
     },
   ]
 
@@ -356,139 +353,153 @@ export default function Home() {
         {/* ═══ HOW IT WORKS — scroll storytelling ═══ */}
         <div id="how-anchor" style={{height:0}} />
 
-        {/* Desktop: 300vh sticky scroll */}
+        {/* Desktop: 300vh sticky — SPLIT LAYOUT */}
         <section className="steps-desk" style={{height:'300vh',position:'relative'}}>
-          <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',background:'linear-gradient(160deg,#faf9ff,#f5f3ff,#fff8fe)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
-            <div style={{position:'absolute',top:44,textAlign:'center',width:'100%'}}>
-              <span className="slabel" style={{display:'block',textAlign:'center'}}>How it works</span>
-            </div>
+          <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',background:'linear-gradient(160deg,#faf9ff,#f5f3ff,#fff8fe)',display:'flex',alignItems:'center',justifyContent:'center'}}>
 
-            {steps.map((step, i) => {
-              const op = i===0?s1:i===1?s2:s3
-              const ein = i===0?step1.in:i===1?step2.in:step3.in
-              const ea = Math.min(1, ein * 2.8)
-              const eout = i===0?step1.out:i===1?step2.out:0
-              const ey = lerp(64, 0, ea)
-              const er = lerp(i%2===0 ? 5 : -5, 0, ea)
-              const es = lerp(0.88, 1, ea)
-              const xy = lerp(0, -100, eout)
-              return (
-                <div key={i} style={{position:'absolute',width:'90%',maxWidth:920,zIndex:2,opacity:op,pointerEvents:op>.05?'auto':'none',transform:`translateY(${ey+xy}px) rotate(${er*(1-eout)}deg) scale(${es})`,display:'flex',alignItems:'center',gap:64,flexWrap:'wrap',justifyContent:'center'}}>
+            {/* LEFT — animated visual */}
+            <div style={{width:'46%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',position:'relative',paddingLeft:48}}>
 
-                  {/* LEFT — text + bullets */}
-                  <div style={{flex:'1',minWidth:280,maxWidth:400,textAlign:'left'}}>
-                    <div style={{display:'inline-flex',alignItems:'center',gap:12,marginBottom:20}}>
-                      <div style={{position:'relative',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>
-                        <div style={{position:'absolute',width:80,height:80,borderRadius:'50%',background:step.color+'12',animation:'pulse 3s ease-out infinite',animationDelay:`${i*.5}s`}} />
-                        <div style={{width:60,height:60,borderRadius:'50%',background:`linear-gradient(135deg,${step.color}22,${step.color}08)`,border:`2px solid ${step.color}28`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,boxShadow:`0 0 40px ${step.color}18`}}>{step.icon}</div>
+              {/* Step 1 — setup form */}
+              {(()=>{
+                const op=s1; const ea=Math.min(1,step1.in*2.8); const ty=lerp(40,0,ea)+lerp(0,-60,step1.out)
+                return (
+                  <div style={{position:'absolute',opacity:op,transform:`translateY(${ty}px) scale(${lerp(.9,1,ea)})`,width:320}}>
+                    <div style={{background:'#fff',borderRadius:24,padding:'28px',boxShadow:'0 20px 60px rgba(139,92,246,.12)',border:'1px solid rgba(139,92,246,.08)'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#8b5cf6',marginBottom:20,display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{width:28,height:28,borderRadius:8,background:'rgba(139,92,246,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>✏️</div>
+                        Business Setup
                       </div>
-                      <div style={{fontSize:11,fontWeight:700,letterSpacing:4,textTransform:'uppercase',color:step.color}}>Step {step.num}</div>
+                      {[{l:'Business Name',v:"Mario's Pizza",done:true},{l:'Industry',v:'Restaurant',done:true},{l:'Brand Tone',v:'Friendly & Warm',done:true},{l:'Platforms',v:'',done:false}].map((f,fi)=>(
+                        <div key={fi} style={{marginBottom:14}}>
+                          <div style={{fontSize:11,color:'rgba(26,16,53,.4)',marginBottom:5,fontWeight:500}}>{f.l}</div>
+                          {f.done?(
+                            <div style={{background:'rgba(139,92,246,.05)',border:'1px solid rgba(139,92,246,.12)',borderRadius:10,padding:'10px 14px',fontSize:13,color:'#1a1035',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                              {f.v}<span style={{color:'#10b981',fontSize:12}}>✓</span>
+                            </div>
+                          ):(
+                            <div style={{display:'flex',gap:6,flexWrap:'wrap' as const}}>
+                              {['📸 IG','🎵 TikTok','📘 FB','⭐ Yelp'].map((p,pi)=>(
+                                <div key={pi} style={{background:pi<3?'rgba(139,92,246,.1)''rgba(0,0,0,.04)',border:`1px solid ${pi<3?'rgba(139,92,246,.25)''rgba(0,0,0,.08)'}`,borderRadius:8,padding:'6px 10px',fontSize:11,fontWeight:600,color:pi<3?'#8b5cf6':'rgba(26,16,53,.35)',animation:pi===3?'pulse 1.5s ease-in-out infinite':undefined}}>{p}</div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div style={{marginTop:4,background:'rgba(139,92,246,.06)',borderRadius:10,padding:'10px 14px',fontSize:12,color:'rgba(26,16,53,.45)',textAlign:'center' as const}}>⏱ Takes about 2 minutes · Done once, forever</div>
                     </div>
-                    <h2 className="S" style={{fontSize:'clamp(30px,4vw,48px)',fontWeight:800,color:'#1a1035',letterSpacing:'-1.5px',lineHeight:1.05,marginBottom:14,whiteSpace:'pre-line'}}>{step.title}</h2>
-                    <p style={{fontSize:16,color:'rgba(26,16,53,.48)',lineHeight:1.8,marginBottom:20,fontWeight:300}}>{step.desc}</p>
-                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                      {(step as any).bullets.map((b: string, bi: number) => (
-                        <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:10}}>
-                          <div style={{width:20,height:20,borderRadius:'50%',background:step.color+'14',border:`1px solid ${step.color}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:2}}>
-                            <span style={{color:step.color,fontSize:10,fontWeight:700}}>✓</span>
+                    <div style={{position:'absolute',width:220,height:220,borderRadius:'50%',background:'radial-gradient(circle,rgba(139,92,246,.18) 0%,transparent 70%)',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:-1,filter:'blur(22px)'}} />
+                  </div>
+                )
+              })()}
+
+              {/* Step 2 — AI generating */}
+              {(()=>{
+                const op=s2; const ea=Math.min(1,step2.in*2.8); const ty=lerp(40,0,ea)+lerp(0,-60,step2.out)
+                return (
+                  <div style={{position:'absolute',opacity:op,transform:`translateY(${ty}px) scale(${lerp(.9,1,ea)})`,width:340}}>
+                    <div style={{background:'#fff',borderRadius:24,padding:'24px',boxShadow:'0 20px 60px rgba(236,72,153,.1)',border:'1px solid rgba(236,72,153,.1)'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#ec4899',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{width:28,height:28,borderRadius:8,background:'rgba(236,72,153,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🤖</div>
+                        AI Writing your content...
+                        <div style={{marginLeft:'auto',display:'flex',gap:3}}>{[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:'50%',background:'#ec4899',animation:'pulse 1.2s ease-in-out infinite',animationDelay:`${d*.2}s`}} />)}</div>
+                      </div>
+                      {[{p:'📸',n:'Instagram',c:'#E1306C',txt:"Fresh from our kitchen tonight 🍕 Long Island's favorite for 12 years! #longislandeats",pct:100},
+                        {p:'🎵',n:'TikTok',c:'#69C9D0',txt:"POV: First time trying our garlic knots 🤯 You won't believe the reaction...",pct:100},
+                        {p:'📘',n:'Facebook',c:'#1877F2',txt:"Join us this weekend for our chef's new seasonal special — limited spots...",pct:72},
+                        {p:'⭐',n:'Yelp Reply',c:'#D32323',txt:"Replying to Sarah K's 5-star review professionally and warmly...",pct:45},
+                      ].map((item,ii)=>(
+                        <div key={ii} style={{background:item.c+'08',borderRadius:12,padding:'11px',marginBottom:8,border:`1px solid ${item.c}15`}}>
+                          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                            <span style={{fontSize:12}}>{item.p}</span>
+                            <span style={{fontSize:11,fontWeight:600,color:item.c}}>{item.n}</span>
+                            <div style={{marginLeft:'auto',fontSize:10,color:item.c,fontWeight:600}}>{item.pct}%</div>
                           </div>
-                          <span style={{fontSize:14,color:'rgba(26,16,53,.6)',lineHeight:1.55}}>{b}</span>
+                          <div style={{height:3,background:'rgba(0,0,0,.06)',borderRadius:2,marginBottom:6,overflow:'hidden'}}>
+                            <div style={{height:'100%',width:`${item.pct}%`,background:`linear-gradient(90deg,${item.c}70,${item.c})`,borderRadius:2}} />
+                          </div>
+                          <p style={{fontSize:10,color:'rgba(26,16,53,.55)',lineHeight:1.5,margin:0}}>{item.txt}</p>
                         </div>
                       ))}
                     </div>
-                    {i===2&&<button onClick={subscribe} className="btn bp" style={{marginTop:28,padding:'14px 36px',fontSize:15}}>Get Started Free →</button>}
+                    <div style={{position:'absolute',width:220,height:220,borderRadius:'50%',background:'radial-gradient(circle,rgba(236,72,153,.16) 0%,transparent 70%)',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:-1,filter:'blur(22px)'}} />
                   </div>
+                )
+              })()}
 
-                  {/* RIGHT — animated visual */}
-                  <div style={{flexShrink:0,width:300}}>
-                    {i===0&&(
-                      /* Step 1 visual: onboarding form */
-                      <div style={{background:'#fff',borderRadius:20,padding:'24px',boxShadow:'0 16px 60px rgba(139,92,246,.1)',border:'1px solid rgba(139,92,246,.1)'}}>
-                        <div style={{fontSize:13,fontWeight:700,color:'#1a1035',marginBottom:16,fontFamily:'Syne,sans-serif'}}>Tell us about your business</div>
-                        {[
-                          {label:'Business Name',val:"Mario's Pizza",done:true},
-                          {label:'Industry',val:'Restaurant',done:true},
-                          {label:'Brand Tone',val:'Friendly & Fun',done:true},
-                          {label:'Platforms',val:'',done:false},
-                        ].map((field,fi)=>(
-                          <div key={fi} style={{marginBottom:12}}>
-                            <div style={{fontSize:11,color:'rgba(26,16,53,.45)',marginBottom:4,fontWeight:500}}>{field.label}</div>
-                            {field.done ? (
-                              <div style={{background:'rgba(139,92,246,.06)',border:'1px solid rgba(139,92,246,.15)',borderRadius:8,padding:'8px 12px',fontSize:13,color:'#1a1035',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                                {field.val}<span style={{color:'#10b981',fontSize:12}}>✓</span>
-                              </div>
-                            ) : (
-                              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                                {['📸','🎵','📘','⭐','🔍'].map((ic,ii)=>(
-                                  <div key={ii} style={{width:32,height:32,borderRadius:8,background:ii<3?'linear-gradient(135deg,#8b5cf6,#ec4899)':'rgba(139,92,246,.08)',border:ii<3?'none':'1px solid rgba(139,92,246,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>{ic}</div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        <div style={{background:'linear-gradient(135deg,#8b5cf6,#ec4899)',borderRadius:10,padding:'10px',textAlign:'center' as const,fontSize:13,color:'#fff',fontWeight:600,marginTop:8}}>Save & Continue →</div>
+              {/* Step 3 — live and running */}
+              {(()=>{
+                const op=s3; const ea=Math.min(1,step3.in*2.8); const ty=lerp(40,0,ea)
+                return (
+                  <div style={{position:'absolute',opacity:op,transform:`translateY(${ty}px) scale(${lerp(.9,1,ea)})`,width:320}}>
+                    <div style={{background:'#fff',borderRadius:24,padding:'24px',boxShadow:'0 20px 60px rgba(16,185,129,.1)',border:'1px solid rgba(16,185,129,.12)'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#10b981',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{width:28,height:28,borderRadius:8,background:'rgba(16,185,129,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🚀</div>
+                        Live — autopilot active
+                        <div style={{marginLeft:'auto',width:8,height:8,borderRadius:'50%',background:'#10b981',animation:'pulse 2s ease-in-out infinite'}} />
                       </div>
-                    )}
-                    {i===1&&(
-                      /* Step 2 visual: AI writing posts */
-                      <div style={{background:'#fff',borderRadius:20,padding:'20px',boxShadow:'0 16px 60px rgba(236,72,153,.1)',border:'1px solid rgba(236,72,153,.1)'}}>
-                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,paddingBottom:12,borderBottom:'1px solid rgba(0,0,0,.06)'}}>
-                          <div style={{width:28,height:28,borderRadius:'50%',background:'linear-gradient(135deg,#8b5cf6,#ec4899)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>🤖</div>
-                          <div><div style={{fontSize:12,fontWeight:600,color:'#1a1035'}}>PostWiz AI</div><div style={{fontSize:10,color:'#10b981'}}>● Generating content...</div></div>
+                      {[{p:'📸',n:'Instagram',t:'Posted · 9:04 AM',stat:'↑ 89 likes',c:'#E1306C'},
+                        {p:'🎵',n:'TikTok',t:'Posted · 3:00 PM',stat:'↑ 312 views',c:'#69C9D0'},
+                        {p:'⭐',n:'Yelp',t:'Reply sent · 28s',stat:'⭐ 4.9 rating',c:'#D32323'},
+                        {p:'🔍',n:'Google',t:'Reply sent · 41s',stat:'⭐ 4.8 rating',c:'#4285F4'},
+                      ].map((item,ii)=>(
+                        <div key={ii} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:ii<3?'1px solid rgba(0,0,0,.05)':'none'}}>
+                          <div style={{width:34,height:34,borderRadius:10,background:item.c+'12',border:`1px solid ${item.c}20`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,flexShrink:0}}>{item.p}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:12,fontWeight:600,color:'#1a1035'}}>{item.n}</div>
+                            <div style={{fontSize:11,color:'rgba(26,16,53,.4)'}}>{item.t}</div>
+                          </div>
+                          <div style={{fontSize:11,fontWeight:600,color:'#10b981',background:'rgba(16,185,129,.08)',border:'1px solid rgba(16,185,129,.15)',padding:'3px 8px',borderRadius:50,whiteSpace:'nowrap' as const}}>{item.stat}</div>
                         </div>
-                        {[
-                          {p:'📸',n:'Instagram',txt:"Fresh from our kitchen tonight 🍕 Come taste why we've been a favorite! #longislandeats #foodie",done:true,c:'#E1306C'},
-                          {p:'🎵',n:'TikTok',txt:'POV: You just tried our garlic knots 🤯 Come see what the hype is about!',done:true,c:'#69C9D0'},
-                          {p:'⭐',n:'Yelp Reply',txt:'Thank you Sarah! So glad you loved the garlic knots 🙏 Can't wait to see you again!',done:false,c:'#D32323'},
-                        ].map((post,pi)=>(
-                          <div key={pi} style={{marginBottom:10,padding:'10px 12px',background:post.done?'rgba(139,92,246,.04)':'rgba(236,72,153,.04)',borderRadius:12,border:`1px solid ${post.done?'rgba(139,92,246,.1)':'rgba(236,72,153,.1)'}`}}>
-                            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:5}}>
-                              <span style={{fontSize:12}}>{post.p}</span>
-                              <span style={{fontSize:10,fontWeight:600,color:post.c}}>{post.n}</span>
-                              {post.done ? <span style={{marginLeft:'auto',fontSize:10,color:'#10b981',fontWeight:600}}>✓ Done</span> : <span style={{marginLeft:'auto',fontSize:10,color:'#ec4899',animation:'pulse 1.5s ease-in-out infinite'}}>Writing...</span>}
-                            </div>
-                            <p style={{fontSize:10,color:'rgba(26,16,53,.6)',lineHeight:1.5}}>{post.txt}{!post.done&&<span style={{animation:'blink 1s step-end infinite',marginLeft:2}}>|</span>}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {i===2&&(
-                      /* Step 3 visual: posts going live */
-                      <div style={{background:'#fff',borderRadius:20,padding:'20px',boxShadow:'0 16px 60px rgba(16,185,129,.1)',border:'1px solid rgba(16,185,129,.1)'}}>
-                        <div style={{fontSize:12,fontWeight:700,color:'#1a1035',marginBottom:14,fontFamily:'Syne,sans-serif',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                          <span>This week</span>
-                          <span style={{fontSize:10,background:'rgba(16,185,129,.1)',color:'#10b981',padding:'3px 8px',borderRadius:50,fontWeight:600}}>● All systems live</span>
-                        </div>
-                        {[
-                          {t:'Mon 9:00 AM',p:'📸 Instagram',txt:'Daily special post',status:'Posted',c:'#10b981'},
-                          {t:'Mon 3:00 PM',p:'🎵 TikTok',txt:'Behind the scenes reel',status:'Posted',c:'#10b981'},
-                          {t:'Tue 9:00 AM',p:'📘 Facebook',txt:'Weekly menu spotlight',status:'Scheduled',c:'#8b5cf6'},
-                          {t:'Tue 11:32 AM',p:'⭐ Yelp',txt:'Review reply sent',status:'Auto-replied',c:'#f97316'},
-                        ].map((item,ii)=>(
-                          <div key={ii} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:ii<3?'1px solid rgba(0,0,0,.05)':'none'}}>
-                            <div style={{flexShrink:0}}>
-                              <div style={{fontSize:9,color:'rgba(26,16,53,.35)',marginBottom:1}}>{item.t}</div>
-                              <div style={{fontSize:11,fontWeight:600,color:'#1a1035'}}>{item.p}</div>
-                            </div>
-                            <div style={{flex:1,fontSize:10,color:'rgba(26,16,53,.5)'}}>{item.txt}</div>
-                            <span style={{fontSize:10,fontWeight:600,color:item.c,background:item.c+'12',padding:'2px 8px',borderRadius:50,flexShrink:0}}>{item.status}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                      ))}
+                      <div style={{marginTop:12,background:'rgba(16,185,129,.06)',borderRadius:10,padding:'10px 14px',fontSize:12,color:'rgba(26,16,53,.5)',textAlign:'center' as const}}>Next week&apos;s posts already scheduled ✓</div>
+                    </div>
+                    <div style={{position:'absolute',width:220,height:220,borderRadius:'50%',background:'radial-gradient(circle,rgba(16,185,129,.18) 0%,transparent 70%)',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:-1,filter:'blur(22px)'}} />
                   </div>
-                </div>
-              )
-            })}
+                )
+              })()}
+            </div>
+
+            {/* RIGHT — text + bullets per step */}
+            <div style={{width:'46%',paddingRight:48,paddingLeft:32,position:'relative',height:'100%',display:'flex',alignItems:'center'}}>
+              {steps.map((step,i)=>{
+                const op=i===0?s1:i===1?s2:s3
+                const ein=i===0?step1.in:i===1?step2.in:step3.in
+                const ea=Math.min(1,ein*2.8)
+                const eout=i===0?step1.out:i===1?step2.out:0
+                const ty=lerp(50,0,ea)+lerp(0,-70,eout)
+                const bullets=[
+                  ['Your business name & industry','Brand tone — friendly, bold, luxury...','Which of the 8 platforms to post on','Any promotions or recurring topics to cover'],
+                  ['Full week of posts for every platform','Captions written for your uploaded photos','Professional reply drafted for every new review','All content tuned to your exact brand voice'],
+                  ['Posts publish at peak engagement times','Review replies sent within seconds of receipt','Content queue refills automatically each week','Analytics update in real time — zero manual work'],
+                ]
+                return (
+                  <div key={i} style={{position:'absolute',opacity:op,transform:`translateY(${ty}px)`,pointerEvents:op>.05?'auto':'none',width:'100%'}}>
+                    <div style={{fontSize:11,fontWeight:700,letterSpacing:4,textTransform:'uppercase' as const,color:step.color,marginBottom:12}}>Step {step.num} of 03</div>
+                    <h2 className="S" style={{fontSize:'clamp(30px,3.2vw,48px)',fontWeight:800,color:'#1a1035',letterSpacing:'-1.8px',lineHeight:1.06,marginBottom:14,whiteSpace:'pre-line' as const}}>{step.title}</h2>
+                    <p style={{fontSize:16,color:'rgba(26,16,53,.45)',lineHeight:1.85,marginBottom:24,fontWeight:300}}>{step.desc}</p>
+                    <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
+                      {bullets[i].map((b,bi)=>(
+                        <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:12}}>
+                          <div style={{width:22,height:22,borderRadius:6,background:step.color+'12',border:`1px solid ${step.color}22`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
+                            <span style={{color:step.color,fontSize:11,fontWeight:700}}>✓</span>
+                          </div>
+                          <span style={{fontSize:14,color:'rgba(26,16,53,.62)',lineHeight:1.6}}>{b}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {i===2&&<button onClick={subscribe} className="btn bp" style={{marginTop:28,padding:'14px 36px',fontSize:15}}>Start Free — No Card Needed →</button>}
+                  </div>
+                )
+              })}
+            </div>
 
             {/* Step dots */}
-            <div style={{position:'absolute',bottom:44,display:'flex',alignItems:'center',gap:8}}>
+            <div style={{position:'absolute',bottom:40,left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:8}}>
               {[0,1,2].map(i=>(
                 <div key={i} style={{height:8,borderRadius:4,width:activeStep===i?28:8,background:activeStep===i?'linear-gradient(90deg,#8b5cf6,#ec4899)':'rgba(139,92,246,.2)',transition:'all .4s cubic-bezier(.16,1,.3,1)'}} />
               ))}
             </div>
-
-            {/* Progress bar */}
             <div style={{position:'absolute',bottom:0,left:0,right:0,height:3,background:'rgba(139,92,246,.06)'}}>
               <div style={{height:'100%',width:`${howProgress*100}%`,background:'linear-gradient(90deg,#8b5cf6,#ec4899)',borderRadius:'0 2px 2px 0',transition:'width .08s linear'}} />
             </div>
