@@ -293,6 +293,7 @@ export default function Home() {
           <a href="#pricing" className="nl">Pricing</a>
           <a href="#contact" className="nl">Contact</a>
           <a href="/studio" className="nl" style={{color:'#8b5cf6',fontWeight:600}}>Studio</a>
+          <a href="/login" className="nl" style={{color:'rgba(26,16,53,.7)',fontWeight:500}}>Log In</a>
           <button onClick={subscribe} className="btn bp" style={{padding:'11px 26px',fontSize:14}}>Start Free</button>
         </div>
         <button className="mnav" onClick={()=>setMobileNav(!mobileNav)} style={{background:'none',border:'none',fontSize:24,cursor:'pointer',color:'#1a1035'}}>
@@ -393,37 +394,139 @@ export default function Home() {
 
         {/* HOW IT WORKS - DESKTOP sticky scroll */}
         <section className="sdsk" style={{height:'300vh',position:'relative'}}>
-          <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',background:'linear-gradient(160deg,#faf9ff,#f5f3ff,#fff8fe)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
-            <div style={{position:'absolute',top:44,textAlign:'center',width:'100%'}}>
-              <span className="slabel" style={{textAlign:'center'}}>How it works</span>
+          <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',background:'linear-gradient(160deg,#faf9ff,#f5f3ff,#fff8fe)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+
+            {/* LEFT — text */}
+            <div style={{width:'44%',paddingLeft:80,position:'relative',height:'100%',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+              <div style={{position:'absolute',top:44}}><span className="slabel">How it works</span></div>
+              {steps.map((step, i) => {
+                const op = i===0 ? s1 : i===1 ? s2 : s3
+                const ein = i===0 ? s1in : i===1 ? s2in : s3in
+                const ea = Math.min(1, ein * 2.8)
+                const eout = i===0 ? s1out : i===1 ? s2out : 0
+                const ty = lerp(50, 0, ea) + lerp(0, -70, eout)
+                return (
+                  <div key={i} style={{position:'absolute',opacity:op,transform:`translateY(${ty}px)`,pointerEvents:op>.05?'auto':'none',maxWidth:380}}>
+                    <div style={{display:'inline-flex',alignItems:'center',gap:10,marginBottom:20}}>
+                      <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${step.color}20,${step.color}10)`,border:`1.5px solid ${step.color}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{step.icon}</div>
+                      <div style={{fontSize:11,fontWeight:700,letterSpacing:4,textTransform:'uppercase',color:step.color}}>Step {step.num}</div>
+                    </div>
+                    <h2 className="S" style={{fontSize:'clamp(32px,3.5vw,52px)',fontWeight:800,color:'#1a1035',letterSpacing:'-2px',lineHeight:1.05,marginBottom:18,whiteSpace:'pre-line'}}>{step.title}</h2>
+                    <p style={{fontSize:17,color:'rgba(26,16,53,.45)',lineHeight:1.85,fontWeight:300,marginBottom:24}}>{step.desc}</p>
+                    {i===2 && <button onClick={subscribe} className="btn bp" style={{padding:'14px 36px',fontSize:15}}>Get Started Free</button>}
+                  </div>
+                )
+              })}
             </div>
 
-            {steps.map((step, i) => {
-              const op = i===0 ? s1 : i===1 ? s2 : s3
-              const ein = i===0 ? s1in : i===1 ? s2in : s3in
-              const ea = Math.min(1, ein * 2.8)
-              const eout = i===0 ? s1out : i===1 ? s2out : 0
-              const ey = lerp(64, 0, ea)
-              const er = lerp(i%2===0 ? 6 : -6, 0, ea)
-              const es = lerp(0.87, 1, ea)
-              const xy = lerp(0, -100, eout)
-              return (
-                <div key={i} style={{position:'absolute',maxWidth:580,width:'88%',textAlign:'center',zIndex:2,opacity:op,pointerEvents:op>.05?'auto':'none',transform:`translateY(${ey+xy}px) rotate(${er*(1-eout)}deg) scale(${es})`}}>
-                  <div style={{position:'relative',display:'inline-flex',alignItems:'center',justifyContent:'center',marginBottom:28}}>
-                    <div style={{position:'absolute',width:120,height:120,borderRadius:'50%',background:step.color+'10',animation:'pulse 3s ease-out infinite',animationDelay:`${i*.5}s`}} />
-                    <div style={{width:88,height:88,borderRadius:'50%',background:`linear-gradient(135deg,${step.color}20,${step.color}08)`,border:`2px solid ${step.color}28`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:38,boxShadow:`0 0 50px ${step.color}18`}}>
-                      {step.icon}
-                    </div>
-                  </div>
-                  <div style={{fontSize:11,fontWeight:700,letterSpacing:4,textTransform:'uppercase',color:step.color,marginBottom:16}}>Step {step.num}</div>
-                  <h2 className="S" style={{fontSize:'clamp(36px,5vw,58px)',fontWeight:800,color:'#1a1035',letterSpacing:'-2px',lineHeight:1.02,marginBottom:20,whiteSpace:'pre-line'}}>{step.title}</h2>
-                  <p style={{fontSize:18,color:'rgba(26,16,53,.45)',lineHeight:1.85,maxWidth:440,margin:'0 auto',fontWeight:300}}>{step.desc}</p>
-                  {i===2 && <button onClick={subscribe} className="btn bp" style={{marginTop:32,padding:'15px 40px',fontSize:16}}>Get Started Free</button>}
-                </div>
-              )
-            })}
+            {/* RIGHT — animated visual per step */}
+            <div style={{width:'56%',height:'100%',position:'relative',display:'flex',alignItems:'center',justifyContent:'center'}}>
 
-            <div style={{position:'absolute',bottom:44,display:'flex',alignItems:'center',gap:8}}>
+              {/* Step 1 visual — setup form UI */}
+              {(()=>{
+                const op=s1; const ea=Math.min(1,s1in*2.8); const ty=lerp(40,0,ea)
+                return (
+                  <div style={{position:'absolute',opacity:op,transform:`translateY(${ty}px) scale(${lerp(.92,1,ea)})`,width:360}}>
+                    <div style={{background:'#fff',borderRadius:24,padding:'28px',boxShadow:'0 20px 60px rgba(139,92,246,.12)',border:'1px solid rgba(139,92,246,.1)'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#8b5cf6',marginBottom:20,display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{width:28,height:28,borderRadius:8,background:'rgba(139,92,246,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>✏️</div>
+                        Business Setup
+                        <div style={{marginLeft:'auto',fontSize:11,color:'rgba(26,16,53,.35)'}}>Step 1 of 3</div>
+                      </div>
+                      {[{l:'Business Name',v:"Mario's Pizzeria",done:true},{l:'Industry',v:'Restaurant',done:true},{l:'Brand Tone',v:'Friendly & Professional',done:true},{l:'Platforms',v:'Instagram, TikTok, Yelp +5',done:true}].map((f,fi)=>(
+                        <div key={fi} style={{marginBottom:12}}>
+                          <div style={{fontSize:11,fontWeight:500,color:'rgba(26,16,53,.4)',marginBottom:4}}>{f.l}</div>
+                          <div style={{background:f.done?'rgba(139,92,246,.04)':'#f8f7ff',border:`1px solid ${f.done?'rgba(139,92,246,.2)':'rgba(139,92,246,.1)'}`,borderRadius:10,padding:'10px 14px',fontSize:13,color:'#1a1035',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                            {f.v}
+                            {f.done && <span style={{color:'#10b981',fontSize:14}}>✓</span>}
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{background:'linear-gradient(135deg,#8b5cf6,#ec4899)',borderRadius:12,padding:'12px',textAlign:'center' as const,fontSize:14,fontWeight:600,color:'#fff',marginTop:8,boxShadow:'0 6px 20px rgba(139,92,246,.3)'}}>
+                        Save and Continue →
+                      </div>
+                    </div>
+                    <div style={{position:'absolute',width:240,height:240,borderRadius:'50%',background:'radial-gradient(circle,rgba(139,92,246,.14) 0%,transparent 70%)',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:-1,filter:'blur(24px)'}} />
+                  </div>
+                )
+              })()}
+
+              {/* Step 2 visual — AI writing content live */}
+              {(()=>{
+                const op=s2; const ea=Math.min(1,s2in*2.8); const ty=lerp(40,0,ea)
+                const pct2 = s2in > 0.3 ? Math.min(1, (s2in - 0.3) / 0.5) : 0
+                return (
+                  <div style={{position:'absolute',opacity:op,transform:`translateY(${ty}px) scale(${lerp(.92,1,ea)})`,width:360}}>
+                    <div style={{background:'#fff',borderRadius:24,padding:'24px',boxShadow:'0 20px 60px rgba(236,72,153,.1)',border:'1px solid rgba(236,72,153,.1)'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#ec4899',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{width:28,height:28,borderRadius:8,background:'rgba(236,72,153,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🤖</div>
+                        AI Writing Content...
+                        <div style={{marginLeft:'auto',display:'flex',gap:3}}>
+                          {[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:'50%',background:'#ec4899',animation:'pulse 1.2s ease-in-out infinite',animationDelay:`${d*.2}s`}} />)}
+                        </div>
+                      </div>
+                      {[
+                        {p:'📸',n:'Instagram',c:'#E1306C',txt:"Fresh from our kitchen tonight! Long Island's favorite for 12 years. #longislandeats",pct:Math.round(pct2*100)},
+                        {p:'🎵',n:'TikTok',c:'#69C9D0',txt:"POV: First time trying our garlic knots. You won't believe the reaction...",pct:Math.round(Math.max(0,pct2-.15)*100/0.85)},
+                        {p:'📘',n:'Facebook',c:'#1877F2',txt:"Join us this weekend for our chef's new seasonal special — limited spots...",pct:Math.round(Math.max(0,pct2-.3)*100/0.7)},
+                        {p:'⭐',n:'Yelp Reply',c:'#D32323',txt:"Replying to a 5-star review professionally and warmly...",pct:Math.round(Math.max(0,pct2-.5)*100/0.5)},
+                      ].map((item,ii)=>(
+                        <div key={ii} style={{background:item.c+'08',borderRadius:12,padding:'11px',marginBottom:8,border:`1px solid ${item.c}15`}}>
+                          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                            <span style={{fontSize:12}}>{item.p}</span>
+                            <span style={{fontSize:11,fontWeight:600,color:item.c}}>{item.n}</span>
+                            <div style={{marginLeft:'auto',fontSize:10,color:item.c,fontWeight:600}}>{Math.min(100,item.pct)}%</div>
+                          </div>
+                          <div style={{height:3,background:'rgba(0,0,0,.06)',borderRadius:2,marginBottom:6,overflow:'hidden'}}>
+                            <div style={{height:'100%',width:`${Math.min(100,item.pct)}%`,background:`linear-gradient(90deg,${item.c}80,${item.c})`,borderRadius:2,transition:'width .3s ease'}} />
+                          </div>
+                          <p style={{fontSize:10,color:'rgba(26,16,53,.5)',lineHeight:1.5,margin:0}}>{item.txt}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{position:'absolute',width:220,height:220,borderRadius:'50%',background:'radial-gradient(circle,rgba(236,72,153,.14) 0%,transparent 70%)',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:-1,filter:'blur(22px)'}} />
+                  </div>
+                )
+              })()}
+
+              {/* Step 3 visual — live dashboard running */}
+              {(()=>{
+                const op=s3; const ea=Math.min(1,s3in*2.8); const ty=lerp(40,0,ea)
+                return (
+                  <div style={{position:'absolute',opacity:op,transform:`translateY(${ty}px) scale(${lerp(.92,1,ea)})`,width:340}}>
+                    <div style={{background:'#fff',borderRadius:24,padding:'24px',boxShadow:'0 20px 60px rgba(16,185,129,.1)',border:'1px solid rgba(16,185,129,.12)'}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#10b981',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{width:28,height:28,borderRadius:8,background:'rgba(16,185,129,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>🚀</div>
+                        Live — Autopilot Active
+                        <div style={{marginLeft:'auto',width:8,height:8,borderRadius:'50%',background:'#10b981',animation:'pulse 2s ease-in-out infinite'}} />
+                      </div>
+                      {[
+                        {p:'📸',n:'Instagram',t:'Posted 9:04 AM',stat:'89 likes',c:'#E1306C'},
+                        {p:'🎵',n:'TikTok',t:'Posted 3:00 PM',stat:'312 views',c:'#69C9D0'},
+                        {p:'⭐',n:'Yelp',t:'Reply sent in 28s',stat:'4.9 stars',c:'#D32323'},
+                        {p:'🔍',n:'Google',t:'Reply sent in 41s',stat:'4.8 stars',c:'#4285F4'},
+                      ].map((item,ii)=>(
+                        <div key={ii} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:ii<3?'1px solid rgba(0,0,0,.05)':'none'}}>
+                          <div style={{width:32,height:32,borderRadius:8,background:item.c+'12',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,flexShrink:0}}>{item.p}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:12,fontWeight:600,color:'#1a1035'}}>{item.n}</div>
+                            <div style={{fontSize:11,color:'rgba(26,16,53,.4)'}}>{item.t}</div>
+                          </div>
+                          <div style={{fontSize:12,fontWeight:600,color:item.c,background:item.c+'10',padding:'3px 10px',borderRadius:50}}>{item.stat}</div>
+                        </div>
+                      ))}
+                      <div style={{marginTop:16,background:'rgba(16,185,129,.06)',borderRadius:12,padding:'12px 14px',textAlign:'center' as const,fontSize:13,fontWeight:600,color:'#10b981'}}>
+                        Running automatically - no action needed
+                      </div>
+                    </div>
+                    <div style={{position:'absolute',width:220,height:220,borderRadius:'50%',background:'radial-gradient(circle,rgba(16,185,129,.14) 0%,transparent 70%)',top:'50%',left:'50%',transform:'translate(-50%,-50%)',zIndex:-1,filter:'blur(22px)'}} />
+                  </div>
+                )
+              })()}
+
+            </div>
+
+            <div style={{position:'absolute',bottom:44,left:'50%',transform:'translateX(-50%)',display:'flex',alignItems:'center',gap:8}}>
               {[0,1,2].map(i => (
                 <div key={i} style={{height:8,borderRadius:4,width:activeStep===i?28:8,background:activeStep===i?'linear-gradient(90deg,#8b5cf6,#ec4899)':'rgba(139,92,246,.2)',transition:'all .4s cubic-bezier(.16,1,.3,1)'}} />
               ))}
@@ -647,36 +750,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* TESTIMONIALS */}
-        <section style={{background:'linear-gradient(160deg,#faf9ff,#f5f3ff)',padding:'120px 40px'}}>
-          <div style={{maxWidth:1100,margin:'0 auto'}}>
-            <div style={{textAlign:'center',marginBottom:64}}>
-              <span className="slabel">Testimonials</span>
-              <h2 className="S" style={{fontSize:'clamp(32px,4vw,52px)',fontWeight:800,color:'#1a1035',letterSpacing:'-1.5px'}}>Real businesses.<br /><span className="gtd">Real results.</span></h2>
-            </div>
-            <div className="tg" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:24}}>
-              {[
-                {n:'Maria G.',b:'Pizzeria - Long Island',q:'PostWiz posts every day and responds to my Yelp reviews automatically. I get 3x more customers finding me online. It pays for itself with one new customer.',stars:5,color:'#E1306C'},
-                {n:'Jason T.',b:'Barbershop - Queens',q:'Set it up in 5 minutes. Posts to Instagram and TikTok daily, handles Google reviews. Got 6 new clients this month purely from online. Best decision ever.',stars:5,color:'#8b5cf6'},
-                {n:'Sandra K.',b:'Boutique - Brooklyn',q:'Zero time spent on social media. PostWiz handles everything. Engagement up 200% and my Google rating went from 4.1 to 4.8 stars in two months.',stars:5,color:'#f97316'}
-              ].map(t => (
-                <div key={t.n} className="card" style={{padding:'32px',transition:'all .3s'}}
-                  onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-6px)';el.style.boxShadow='0 20px 60px rgba(0,0,0,.06)'}}
-                  onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='none';el.style.boxShadow=''}}>
-                  <div style={{display:'flex',gap:2,marginBottom:16}}>{Array(t.stars).fill(0).map((_,i) => <span key={i} style={{color:t.color,fontSize:16}}>★</span>)}</div>
-                  <p style={{fontSize:15,color:'rgba(26,16,53,.62)',lineHeight:1.9,marginBottom:24,fontStyle:'italic'}}>"{t.q}"</p>
-                  <div style={{display:'flex',alignItems:'center',gap:12}}>
-                    <div style={{width:40,height:40,borderRadius:'50%',background:`linear-gradient(135deg,${t.color}18,${t.color}08)`,border:`1.5px solid ${t.color}22`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:700,color:t.color,fontFamily:'Syne,sans-serif'}}>{t.n[0]}</div>
-                    <div>
-                      <div style={{fontSize:14,fontWeight:600,color:'#1a1035'}}>{t.n}</div>
-                      <div style={{fontSize:12,color:'rgba(26,16,53,.4)',marginTop:2}}>{t.b}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+
 
         {/* PRICING */}
         <section id="pricing" style={{background:'#fff',padding:'120px 40px'}}>

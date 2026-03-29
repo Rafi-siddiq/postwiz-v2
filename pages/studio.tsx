@@ -1,4 +1,6 @@
 import Head from 'next/head'
+import { useEffect } from 'react'
+import { useRouter } from 'next/router'
 import { useState, useRef, useCallback } from 'react'
 
 interface GeneratedCaptions {
@@ -51,6 +53,16 @@ export default function Studio() {
   const [bulkAnalyzing, setBulkAnalyzing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropRef = useRef<HTMLDivElement>(null)
+
+  const router = useRouter()
+  const [user, setUser] = useState<{name:string;email:string;plan:string;master:boolean}|null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('pw_user')
+    if (!stored) { router.push('/login'); return }
+    setUser(JSON.parse(stored))
+  }, [])
+
 
   const toBase64 = (file: File): Promise<{ base64: string; mediaType: string }> =>
     new Promise((resolve, reject) => {
@@ -238,6 +250,17 @@ export default function Studio() {
               + Add Photos
             </button>
             <input ref={fileInputRef} type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={e => addImages(Array.from(e.target.files || []))} />
+            {/* User info */}
+            {user && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 50, padding: '8px 16px' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#8b5cf6,#ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>{user.name[0].toUpperCase()}</div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{user.name}</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{user.plan} {user.master ? '· Master' : ''}</div>
+                </div>
+                <button onClick={() => { localStorage.removeItem('pw_user'); router.push('/login') }} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter,sans-serif' }}>Log out</button>
+              </div>
+            )}
           </div>
         </header>
 
