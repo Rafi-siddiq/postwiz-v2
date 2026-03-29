@@ -184,31 +184,22 @@ export default function Studio() {
     setChatLoading(true)
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+    try {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [
-            {
-              role: 'user',
-              content: `You are PostWiz AI, a social media assistant for small businesses. 
-Business: ${business.name || 'Unknown'}, Industry: ${business.industry || 'Small Business'}, Tone: ${business.tone}.
-Platforms: ${selectedPlatforms.join(', ')}.
-Images uploaded: ${images.length}. Approved posts: ${images.reduce((a, i) => a + i.approvedPlatforms.length, 0)}.
-
-You can: write captions/posts, suggest weekly content ideas, draft review responses, answer analytics questions.
-Keep responses concise and actionable. Use emojis naturally. Format lists cleanly.
-
-User message: ${chatInput.trim()}`
-            }
-          ]
+          message: chatInput.trim(),
+          businessName: business.name,
+          industry: business.industry,
+          tone: business.tone,
+          platforms: selectedPlatforms,
+          imageCount: images.length,
+          approvedCount: images.reduce((a, i) => a + i.approvedPlatforms.length, 0)
         })
       })
       const data = await res.json()
-      const reply = data.content?.[0]?.text || "I couldn't process that. Try again!"
-      setChatMessages(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date() }])
+      const reply = data.reply || "I couldn't process that. Try again!"
     } catch {
       setChatMessages(prev => [...prev, { role: 'assistant', content: "Something went wrong. Please try again!", timestamp: new Date() }])
     }
