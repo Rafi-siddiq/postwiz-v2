@@ -155,9 +155,21 @@ export default function Home() {
   ]
 
   const steps = [
-    {icon:'✏️',num:'01',color:'#8b5cf6',title:'Tell us about\nyour business',desc:'Name, industry, brand voice, which platforms. Takes 2 minutes. You only ever do this once — PostWiz remembers everything.'},
-    {icon:'🤖',num:'02',color:'#ec4899',title:'AI writes all\nyour content',desc:'A full week of posts for every platform, captions for your photos, and professional replies to every review — all in your exact brand voice.'},
-    {icon:'🚀',num:'03',color:'#10b981',title:'Everything goes live\nautomatically',desc:'Posts publish at peak engagement times. Reviews get replies within seconds. Your entire online presence runs on autopilot, every single day.'},
+    { icon:'✏️', num:'01', color:'#8b5cf6',
+      title:'Tell us about\nyour business',
+      desc:'Name, industry, brand voice, which platforms. Takes 2 minutes. Done once, remembered forever.',
+      bullets:['Business name, industry & location','Your brand tone — fun, bold, professional','Which of the 8 platforms to manage','Works for any local business or industry'],
+    },
+    { icon:'🤖', num:'02', color:'#ec4899',
+      title:'AI writes all\nyour content',
+      desc:'A full week of posts for every platform, captions for your photos, and professional replies to every review — all in your exact brand voice.',
+      bullets:['7 days of posts generated every week automatically','Platform-specific captions — not copy-pasted across all','Review responses drafted and sent in under 30 seconds','Approve everything, edit anything, or let it fully auto-post'],
+    },
+    { icon:'🚀', num:'03', color:'#10b981',
+      title:'Everything goes live\nautomatically',
+      desc:'Posts publish at peak engagement times. Reviews get replies within seconds. Your entire online presence runs on autopilot, every single day.',
+      bullets:['AI picks peak posting times for your audience','Reviews replied to in under 30 seconds — automatically','New content generated fresh every single week','Zero daily effort required from you — ever again'],
+    },
   ]
 
   return (
@@ -357,19 +369,114 @@ export default function Home() {
               const ea = Math.min(1, ein * 2.8)
               const eout = i===0?step1.out:i===1?step2.out:0
               const ey = lerp(64, 0, ea)
-              const er = lerp(i%2===0 ? 6 : -6, 0, ea)
-              const es = lerp(0.87, 1, ea)
+              const er = lerp(i%2===0 ? 5 : -5, 0, ea)
+              const es = lerp(0.88, 1, ea)
               const xy = lerp(0, -100, eout)
               return (
-                <div key={i} style={{position:'absolute',maxWidth:580,width:'88%',textAlign:'center',zIndex:2,opacity:op,pointerEvents:op>.05?'auto':'none',transform:`translateY(${ey+xy}px) rotate(${er*(1-eout)}deg) scale(${es})`}}>
-                  <div style={{position:'relative',display:'inline-flex',alignItems:'center',justifyContent:'center',marginBottom:28}}>
-                    <div style={{position:'absolute',width:120,height:120,borderRadius:'50%',background:step.color+'10',animation:'pulse 3s ease-out infinite',animationDelay:`${i*.5}s`}} />
-                    <div style={{width:88,height:88,borderRadius:'50%',background:`linear-gradient(135deg,${step.color}20,${step.color}08)`,border:`2px solid ${step.color}28`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:38,boxShadow:`0 0 50px ${step.color}18`}}>{step.icon}</div>
+                <div key={i} style={{position:'absolute',width:'90%',maxWidth:920,zIndex:2,opacity:op,pointerEvents:op>.05?'auto':'none',transform:`translateY(${ey+xy}px) rotate(${er*(1-eout)}deg) scale(${es})`,display:'flex',alignItems:'center',gap:64,flexWrap:'wrap',justifyContent:'center'}}>
+
+                  {/* LEFT — text + bullets */}
+                  <div style={{flex:'1',minWidth:280,maxWidth:400,textAlign:'left'}}>
+                    <div style={{display:'inline-flex',alignItems:'center',gap:12,marginBottom:20}}>
+                      <div style={{position:'relative',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>
+                        <div style={{position:'absolute',width:80,height:80,borderRadius:'50%',background:step.color+'12',animation:'pulse 3s ease-out infinite',animationDelay:`${i*.5}s`}} />
+                        <div style={{width:60,height:60,borderRadius:'50%',background:`linear-gradient(135deg,${step.color}22,${step.color}08)`,border:`2px solid ${step.color}28`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,boxShadow:`0 0 40px ${step.color}18`}}>{step.icon}</div>
+                      </div>
+                      <div style={{fontSize:11,fontWeight:700,letterSpacing:4,textTransform:'uppercase',color:step.color}}>Step {step.num}</div>
+                    </div>
+                    <h2 className="S" style={{fontSize:'clamp(30px,4vw,48px)',fontWeight:800,color:'#1a1035',letterSpacing:'-1.5px',lineHeight:1.05,marginBottom:14,whiteSpace:'pre-line'}}>{step.title}</h2>
+                    <p style={{fontSize:16,color:'rgba(26,16,53,.48)',lineHeight:1.8,marginBottom:20,fontWeight:300}}>{step.desc}</p>
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                      {(step as any).bullets.map((b: string, bi: number) => (
+                        <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:10}}>
+                          <div style={{width:20,height:20,borderRadius:'50%',background:step.color+'14',border:`1px solid ${step.color}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:2}}>
+                            <span style={{color:step.color,fontSize:10,fontWeight:700}}>✓</span>
+                          </div>
+                          <span style={{fontSize:14,color:'rgba(26,16,53,.6)',lineHeight:1.55}}>{b}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {i===2&&<button onClick={subscribe} className="btn bp" style={{marginTop:28,padding:'14px 36px',fontSize:15}}>Get Started Free →</button>}
                   </div>
-                  <div style={{fontSize:11,fontWeight:700,letterSpacing:4,textTransform:'uppercase',color:step.color,marginBottom:16}}>Step {step.num}</div>
-                  <h2 className="S" style={{fontSize:'clamp(36px,5vw,58px)',fontWeight:800,color:'#1a1035',letterSpacing:'-2px',lineHeight:1.02,marginBottom:20,whiteSpace:'pre-line'}}>{step.title}</h2>
-                  <p style={{fontSize:18,color:'rgba(26,16,53,.45)',lineHeight:1.85,maxWidth:440,margin:'0 auto',fontWeight:300}}>{step.desc}</p>
-                  {i===2&&<button onClick={subscribe} className="btn bp" style={{marginTop:32,padding:'15px 40px',fontSize:16}}>Get Started Free →</button>}
+
+                  {/* RIGHT — animated visual */}
+                  <div style={{flexShrink:0,width:300}}>
+                    {i===0&&(
+                      /* Step 1 visual: onboarding form */
+                      <div style={{background:'#fff',borderRadius:20,padding:'24px',boxShadow:'0 16px 60px rgba(139,92,246,.1)',border:'1px solid rgba(139,92,246,.1)'}}>
+                        <div style={{fontSize:13,fontWeight:700,color:'#1a1035',marginBottom:16,fontFamily:'Syne,sans-serif'}}>Tell us about your business</div>
+                        {[
+                          {label:'Business Name',val:"Mario's Pizza",done:true},
+                          {label:'Industry',val:'Restaurant',done:true},
+                          {label:'Brand Tone',val:'Friendly & Fun',done:true},
+                          {label:'Platforms',val:'',done:false},
+                        ].map((field,fi)=>(
+                          <div key={fi} style={{marginBottom:12}}>
+                            <div style={{fontSize:11,color:'rgba(26,16,53,.45)',marginBottom:4,fontWeight:500}}>{field.label}</div>
+                            {field.done ? (
+                              <div style={{background:'rgba(139,92,246,.06)',border:'1px solid rgba(139,92,246,.15)',borderRadius:8,padding:'8px 12px',fontSize:13,color:'#1a1035',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                                {field.val}<span style={{color:'#10b981',fontSize:12}}>✓</span>
+                              </div>
+                            ) : (
+                              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                                {['📸','🎵','📘','⭐','🔍'].map((ic,ii)=>(
+                                  <div key={ii} style={{width:32,height:32,borderRadius:8,background:ii<3?'linear-gradient(135deg,#8b5cf6,#ec4899)':'rgba(139,92,246,.08)',border:ii<3?'none':'1px solid rgba(139,92,246,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>{ic}</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <div style={{background:'linear-gradient(135deg,#8b5cf6,#ec4899)',borderRadius:10,padding:'10px',textAlign:'center' as const,fontSize:13,color:'#fff',fontWeight:600,marginTop:8}}>Save & Continue →</div>
+                      </div>
+                    )}
+                    {i===1&&(
+                      /* Step 2 visual: AI writing posts */
+                      <div style={{background:'#fff',borderRadius:20,padding:'20px',boxShadow:'0 16px 60px rgba(236,72,153,.1)',border:'1px solid rgba(236,72,153,.1)'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,paddingBottom:12,borderBottom:'1px solid rgba(0,0,0,.06)'}}>
+                          <div style={{width:28,height:28,borderRadius:'50%',background:'linear-gradient(135deg,#8b5cf6,#ec4899)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>🤖</div>
+                          <div><div style={{fontSize:12,fontWeight:600,color:'#1a1035'}}>PostWiz AI</div><div style={{fontSize:10,color:'#10b981'}}>● Generating content...</div></div>
+                        </div>
+                        {[
+                          {p:'📸',n:'Instagram',txt:"Fresh from our kitchen tonight 🍕 Come taste why we've been a favorite! #longislandeats #foodie",done:true,c:'#E1306C'},
+                          {p:'🎵',n:'TikTok',txt:'POV: You just tried our garlic knots 🤯 Come see what the hype is about!',done:true,c:'#69C9D0'},
+                          {p:'⭐',n:'Yelp Reply',txt:'Thank you Sarah! So glad you loved the garlic knots 🙏 Can't wait to see you again!',done:false,c:'#D32323'},
+                        ].map((post,pi)=>(
+                          <div key={pi} style={{marginBottom:10,padding:'10px 12px',background:post.done?'rgba(139,92,246,.04)':'rgba(236,72,153,.04)',borderRadius:12,border:`1px solid ${post.done?'rgba(139,92,246,.1)':'rgba(236,72,153,.1)'}`}}>
+                            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:5}}>
+                              <span style={{fontSize:12}}>{post.p}</span>
+                              <span style={{fontSize:10,fontWeight:600,color:post.c}}>{post.n}</span>
+                              {post.done ? <span style={{marginLeft:'auto',fontSize:10,color:'#10b981',fontWeight:600}}>✓ Done</span> : <span style={{marginLeft:'auto',fontSize:10,color:'#ec4899',animation:'pulse 1.5s ease-in-out infinite'}}>Writing...</span>}
+                            </div>
+                            <p style={{fontSize:10,color:'rgba(26,16,53,.6)',lineHeight:1.5}}>{post.txt}{!post.done&&<span style={{animation:'blink 1s step-end infinite',marginLeft:2}}>|</span>}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {i===2&&(
+                      /* Step 3 visual: posts going live */
+                      <div style={{background:'#fff',borderRadius:20,padding:'20px',boxShadow:'0 16px 60px rgba(16,185,129,.1)',border:'1px solid rgba(16,185,129,.1)'}}>
+                        <div style={{fontSize:12,fontWeight:700,color:'#1a1035',marginBottom:14,fontFamily:'Syne,sans-serif',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                          <span>This week</span>
+                          <span style={{fontSize:10,background:'rgba(16,185,129,.1)',color:'#10b981',padding:'3px 8px',borderRadius:50,fontWeight:600}}>● All systems live</span>
+                        </div>
+                        {[
+                          {t:'Mon 9:00 AM',p:'📸 Instagram',txt:'Daily special post',status:'Posted',c:'#10b981'},
+                          {t:'Mon 3:00 PM',p:'🎵 TikTok',txt:'Behind the scenes reel',status:'Posted',c:'#10b981'},
+                          {t:'Tue 9:00 AM',p:'📘 Facebook',txt:'Weekly menu spotlight',status:'Scheduled',c:'#8b5cf6'},
+                          {t:'Tue 11:32 AM',p:'⭐ Yelp',txt:'Review reply sent',status:'Auto-replied',c:'#f97316'},
+                        ].map((item,ii)=>(
+                          <div key={ii} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:ii<3?'1px solid rgba(0,0,0,.05)':'none'}}>
+                            <div style={{flexShrink:0}}>
+                              <div style={{fontSize:9,color:'rgba(26,16,53,.35)',marginBottom:1}}>{item.t}</div>
+                              <div style={{fontSize:11,fontWeight:600,color:'#1a1035'}}>{item.p}</div>
+                            </div>
+                            <div style={{flex:1,fontSize:10,color:'rgba(26,16,53,.5)'}}>{item.txt}</div>
+                            <span style={{fontSize:10,fontWeight:600,color:item.c,background:item.c+'12',padding:'2px 8px',borderRadius:50,flexShrink:0}}>{item.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -589,29 +696,34 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══ TESTIMONIALS ═══ */}
-        <section style={{background:'linear-gradient(160deg,#faf9ff,#f5f3ff)',padding:'120px 40px'}}>
-          <div style={{maxWidth:1100,margin:'0 auto'}}>
-            <div style={{textAlign:'center',marginBottom:64}}>
-              <span className="slabel">Testimonials</span>
-              <h2 className="S" style={{fontSize:'clamp(32px,4vw,52px)',fontWeight:800,color:'#1a1035',letterSpacing:'-1.5px'}}>Real businesses.<br /><span className="gtd">Real results.</span></h2>
-            </div>
-            <div className="tg" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:24}}>
-              {[{n:'Maria G.',b:'Pizzeria · Long Island',q:'PostWiz posts every day and responds to my Yelp reviews automatically. I get 3x more customers finding me online. It pays for itself with one new customer.',stars:5,color:'#E1306C'},
-                {n:'Jason T.',b:'Barbershop · Queens',q:'Set it up in 5 minutes. Posts to Instagram and TikTok daily, handles Google reviews. Got 6 new clients this month purely from online. Best decision ever.',stars:5,color:'#8b5cf6'},
-                {n:'Sandra K.',b:'Boutique · Brooklyn',q:'Zero time spent on social media. PostWiz handles everything. Engagement up 200% and my Google rating went from 4.1 to 4.8 stars in two months.',stars:5,color:'#f97316'}
-              ].map(t=>(
-                <div key={t.n} className="card" style={{padding:'32px',transition:'all .3s'}}
-                  onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='translateY(-6px)';el.style.boxShadow='0 20px 60px rgba(0,0,0,.06)'}}
-                  onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.transform='none';el.style.boxShadow=''}}>
-                  <div style={{display:'flex',gap:2,marginBottom:16}}>{Array(t.stars).fill(0).map((_,i)=><span key={i} style={{color:t.color,fontSize:16}}>★</span>)}</div>
-                  <p style={{fontSize:15,color:'rgba(26,16,53,.62)',lineHeight:1.9,marginBottom:24,fontStyle:'italic'}}>&ldquo;{t.q}&rdquo;</p>
-                  <div style={{display:'flex',alignItems:'center',gap:12}}>
-                    <div style={{width:40,height:40,borderRadius:'50%',background:`linear-gradient(135deg,${t.color}18,${t.color}08)`,border:`1.5px solid ${t.color}22`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:700,color:t.color,fontFamily:'Syne,sans-serif'}}>{t.n[0]}</div>
-                    <div><div style={{fontSize:14,fontWeight:600,color:'#1a1035'}}>{t.n}</div><div style={{fontSize:12,color:'rgba(26,16,53,.4)',marginTop:2}}>{t.b}</div></div>
-                  </div>
+        {/* ═══ SOCIAL PROOF — no fake reviews ═══ */}
+        <section style={{background:'linear-gradient(160deg,#faf9ff,#f5f3ff)',padding:'80px 40px'}}>
+          <div style={{maxWidth:1000,margin:'0 auto',textAlign:'center'}}>
+            <p style={{fontSize:13,fontWeight:700,letterSpacing:3,textTransform:'uppercase',color:'rgba(26,16,53,.35)',marginBottom:40}}>Built for local businesses who have better things to do</p>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:24,marginBottom:60}} className="statg">
+              {[
+                {icon:'🏪',stat:'Any Industry',sub:'Restaurants, gyms, salons, boutiques, barbershops & more'},
+                {icon:'⚡',stat:'2 Min Setup',sub:'Tell us about your business once, never again'},
+                {icon:'🔒',stat:'No Contract',sub:'Cancel anytime, no questions asked'},
+                {icon:'🤖',stat:'Fully Automated',sub:'Posts and reviews handled while you sleep'},
+              ].map(s=>(
+                <div key={s.stat} className="card" style={{padding:'28px 20px',textAlign:'center'}}>
+                  <div style={{fontSize:32,marginBottom:12}}>{s.icon}</div>
+                  <div className="S" style={{fontSize:18,fontWeight:800,color:'#1a1035',marginBottom:6}}>{s.stat}</div>
+                  <div style={{fontSize:13,color:'rgba(26,16,53,.45)',lineHeight:1.6}}>{s.sub}</div>
                 </div>
               ))}
+            </div>
+            <div style={{background:'#fff',borderRadius:20,padding:'32px 40px',border:'1px solid rgba(139,92,246,.08)',boxShadow:'0 4px 24px rgba(139,92,246,.05)'}}>
+              <p style={{fontSize:13,color:'rgba(26,16,53,.4)',marginBottom:20,fontWeight:500}}>Works seamlessly with platforms you already use</p>
+              <div style={{display:'flex',justifyContent:'center',gap:20,flexWrap:'wrap',alignItems:'center'}}>
+                {[{n:'Instagram',i:'📸',c:'#E1306C'},{n:'TikTok',i:'🎵',c:'#69C9D0'},{n:'Facebook',i:'📘',c:'#1877F2'},{n:'X',i:'𝕏',c:'#555'},{n:'LinkedIn',i:'💼',c:'#0A66C2'},{n:'Pinterest',i:'📌',c:'#E60023'},{n:'Yelp',i:'⭐',c:'#D32323'},{n:'Google',i:'🔍',c:'#4285F4'}].map(p=>(
+                  <div key={p.n} style={{display:'flex',alignItems:'center',gap:7,padding:'8px 16px',borderRadius:50,background:p.c+'0c',border:`1px solid ${p.c}20`}}>
+                    <span style={{fontSize:16}}>{p.i}</span>
+                    <span style={{fontSize:13,fontWeight:600,color:p.c}}>{p.n}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
