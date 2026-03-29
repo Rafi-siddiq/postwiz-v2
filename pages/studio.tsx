@@ -184,7 +184,6 @@ export default function Studio() {
     setChatLoading(true)
 
     try {
-    try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -200,6 +199,7 @@ export default function Studio() {
       })
       const data = await res.json()
       const reply = data.reply || "I couldn't process that. Try again!"
+      setChatMessages(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date() }])
     } catch {
       setChatMessages(prev => [...prev, { role: 'assistant', content: "Something went wrong. Please try again!", timestamp: new Date() }])
     }
